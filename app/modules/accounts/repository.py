@@ -43,6 +43,12 @@ class AccountsRepository:
         result = await self._session.execute(select(Account).order_by(Account.email))
         return list(result.scalars().all())
 
+    async def list_by_ids(self, account_ids: list[str]) -> list[Account]:
+        if not account_ids:
+            return []
+        result = await self._session.execute(select(Account).where(Account.id.in_(account_ids)))
+        return list(result.scalars().all())
+
     async def list_request_usage_summary_by_account(
         self,
         account_ids: list[str] | None = None,

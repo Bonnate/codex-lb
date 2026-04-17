@@ -82,11 +82,20 @@ class AccountsResponse(DashboardModel):
     accounts: List[AccountSummary] = Field(default_factory=list)
 
 
-class AccountImportResponse(DashboardModel):
+class ImportedAccount(DashboardModel):
     account_id: str
     email: str
     plan_type: str
     status: str
+
+
+class AccountImportResponse(DashboardModel):
+    accounts: list[ImportedAccount] = Field(default_factory=list)
+    skipped_count: int = 0
+
+
+class AccountBulkExportRequest(DashboardModel):
+    account_ids: list[str] = Field(default_factory=list)
 
 
 class AccountPauseResponse(DashboardModel):

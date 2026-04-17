@@ -15,6 +15,7 @@ export type AccountDetailProps = {
   busy: boolean;
   onPause: (accountId: string) => void;
   onResume: (accountId: string) => void;
+  onExport: (accountId: string) => void;
   onDelete: (accountId: string) => void;
   onReauth: () => void;
 };
@@ -25,6 +26,7 @@ export function AccountDetail({
   busy,
   onPause,
   onResume,
+  onExport,
   onDelete,
   onReauth,
 }: AccountDetailProps) {
@@ -37,8 +39,8 @@ export function AccountDetail({
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted">
           <User className="h-5 w-5 text-muted-foreground" />
         </div>
-        <p className="mt-3 text-sm font-medium text-muted-foreground">Select an account</p>
-        <p className="mt-1 text-xs text-muted-foreground/70">Choose an account from the list to view details.</p>
+        <p className="mt-3 text-sm font-medium text-muted-foreground">계정을 선택하세요</p>
+        <p className="mt-1 text-xs text-muted-foreground/70">목록에서 계정을 선택하면 상세 정보를 볼 수 있습니다.</p>
       </div>
     );
   }
@@ -59,7 +61,7 @@ export function AccountDetail({
           {titleIsEmail ? <><span className={blurred ? "privacy-blur" : ""}>{title}</span>{idSuffix}</> : <>{title}{!emailSubtitle ? idSuffix : ""}</>}
         </h2>
         {emailSubtitle ? (
-          <p className="mt-0.5 text-xs text-muted-foreground" title={showAccountId ? `Account ID ${account.accountId}` : undefined}>
+          <p className="mt-0.5 text-xs text-muted-foreground" title={showAccountId ? `계정 ID ${account.accountId}` : undefined}>
             <span className={blurred ? "privacy-blur" : ""}>{emailSubtitle}</span>{showAccountId ? ` | ID ${compactId}` : ""}
           </p>
         ) : null}
@@ -72,6 +74,7 @@ export function AccountDetail({
         busy={busy}
         onPause={onPause}
         onResume={onResume}
+        onExport={onExport}
         onDelete={onDelete}
         onReauth={onReauth}
       />

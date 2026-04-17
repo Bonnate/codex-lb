@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useMemo } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -23,6 +23,8 @@ export function AccountsPage() {
   const {
     accountsQuery,
     importMutation,
+    exportMutation,
+    bulkExportMutation,
     pauseMutation,
     resumeMutation,
     deleteMutation,
@@ -32,10 +34,17 @@ export function AccountsPage() {
   const importDialog = useDialogState();
   const oauthDialog = useDialogState();
   const deleteDialog = useDialogState<string>();
+  const [exportSelectedAccountIds, setExportSelectedAccountIds] = useState<string[]>([]);
 
   const accounts = useMemo(() => accountsQuery.data ?? [], [accountsQuery.data]);
   const duplicateAccountIds = useMemo(() => buildDuplicateAccountIdSet(accounts), [accounts]);
   const selectedAccountId = searchParams.get("selected");
+
+  useEffect(() => {
+    setExportSelectedAccountIds((current) =>
+      current.filter((accountId) => accounts.some((account) => account.accountId === accountId)),
+    );
+  }, [accounts]);
 
   const handleSelectAccount = useCallback((accountId: string) => {
     const nextSearchParams = new URLSearchParams(searchParams);
@@ -61,14 +70,44 @@ export function AccountsPage() {
     [accounts, resolvedSelectedAccountId],
   );
 
+  const handleToggleExportSelection = useCallback((accountId: string, selected: boolean) => {
+    setExportSelectedAccountIds((current) => {
+      const next = new Set(current);
+      if (selected) {
+        next.add(accountId);
+      } else {
+        next.delete(accountId);
+      }
+      return [...next];
+    });
+  }, []);
+
+  const handleSetAllExportSelection = useCallback((accountIds: string[], selected: boolean) => {
+    setExportSelectedAccountIds((current) => {
+      const next = new Set(current);
+      for (const accountId of accountIds) {
+        if (selected) {
+          next.add(accountId);
+        } else {
+          next.delete(accountId);
+        }
+      }
+      return [...next];
+    });
+  }, []);
+
   const mutationBusy =
     importMutation.isPending ||
+    exportMutation.isPending ||
+    bulkExportMutation.isPending ||
     pauseMutation.isPending ||
     resumeMutation.isPending ||
     deleteMutation.isPending;
 
   const mutationError =
     getErrorMessageOrNull(importMutation.error) ||
+    getErrorMessageOrNull(exportMutation.error) ||
+    getErrorMessageOrNull(bulkExportMutation.error) ||
     getErrorMessageOrNull(pauseMutation.error) ||
     getErrorMessageOrNull(resumeMutation.error) ||
     getErrorMessageOrNull(deleteMutation.error);
@@ -77,9 +116,9 @@ export function AccountsPage() {
     <div className="animate-fade-in-up space-y-6">
       {/* Page header */}
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Accounts</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">계정</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage imported accounts and authentication flows.
+          가져온 계정과 인증 흐름을 관리합니다.
         </p>
       </div>
 
@@ -93,7 +132,11 @@ export function AccountsPage() {
             <AccountList
               accounts={accounts}
               selectedAccountId={resolvedSelectedAccountId}
+              exportSelectedAccountIds={exportSelectedAccountIds}
               onSelect={handleSelectAccount}
+              onToggleExportSelection={handleToggleExportSelection}
+              onSetAllExportSelection={handleSetAllExportSelection}
+              onExportSelected={() => void bulkExportMutation.mutateAsync(exportSelectedAccountIds)}
               onOpenImport={() => importDialog.show()}
               onOpenOauth={() => oauthDialog.show()}
             />
@@ -105,6 +148,7 @@ export function AccountsPage() {
             busy={mutationBusy}
             onPause={(accountId) => void pauseMutation.mutateAsync(accountId)}
             onResume={(accountId) => void resumeMutation.mutateAsync(accountId)}
+            onExport={(accountId) => void exportMutation.mutateAsync(accountId)}
             onDelete={(accountId) => deleteDialog.show(accountId)}
             onReauth={() => oauthDialog.show()}
           />
@@ -116,8 +160,8 @@ export function AccountsPage() {
         busy={importMutation.isPending}
         error={getErrorMessageOrNull(importMutation.error)}
         onOpenChange={importDialog.onOpenChange}
-        onImport={async (file) => {
-          await importMutation.mutateAsync(file);
+        onImport={async (files) => {
+          await importMutation.mutateAsync(files);
         }}
       />
 
@@ -142,10 +186,10 @@ export function AccountsPage() {
 
       <ConfirmDialog
         open={deleteDialog.open}
-        title="Delete account"
-        description="This action removes the account from the load balancer configuration."
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
+        title="계정 삭제"
+        description="이 작업은 로드밸런서 설정에서 계정을 제거합니다."
+        confirmLabel="삭제"
+        cancelLabel="취소"
         onOpenChange={deleteDialog.onOpenChange}
         onConfirm={() => {
           if (!deleteDialog.data) {
@@ -157,7 +201,7 @@ export function AccountsPage() {
         }}
       />
 
-      <LoadingOverlay visible={!!accountsQuery.data && mutationBusy} label="Updating accounts..." />
+      <LoadingOverlay visible={!!accountsQuery.data && mutationBusy} label="계정을 업데이트하는 중..." />
     </div>
   );
 }

@@ -34,6 +34,14 @@ if (typeof globalThis.ResizeObserver === "undefined") {
   globalThis.ResizeObserver = ResizeObserverMock;
 }
 
+if (typeof URL.createObjectURL !== "function") {
+  URL.createObjectURL = vi.fn(() => "blob:mock-download");
+}
+
+if (typeof URL.revokeObjectURL !== "function") {
+  URL.revokeObjectURL = vi.fn();
+}
+
 beforeAll(() => {
   configure({ asyncUtilTimeout: 10_000 });
   startMockServer();

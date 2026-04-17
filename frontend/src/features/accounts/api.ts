@@ -1,7 +1,8 @@
-import { del, get, post } from "@/lib/api-client";
+import { del, get, getBlob, post, postBlob } from "@/lib/api-client";
 
 import {
   AccountActionResponseSchema,
+  AccountBulkExportRequestSchema,
   AccountImportResponseSchema,
   AccountsResponseSchema,
   AccountTrendsResponseSchema,
@@ -22,11 +23,24 @@ export function listAccounts() {
   return get(ACCOUNTS_BASE_PATH, AccountsResponseSchema);
 }
 
-export function importAccount(file: File) {
+export function importAccounts(files: File[]) {
   const formData = new FormData();
-  formData.append("auth_json", file);
+  for (const file of files) {
+    formData.append("auth_json", file);
+  }
   return post(`${ACCOUNTS_BASE_PATH}/import`, AccountImportResponseSchema, {
     body: formData,
+  });
+}
+
+export function exportAccount(accountId: string) {
+  return getBlob(`${ACCOUNTS_BASE_PATH}/${encodeURIComponent(accountId)}/export`);
+}
+
+export function exportAccounts(accountIds: string[]) {
+  const validated = AccountBulkExportRequestSchema.parse({ accountIds });
+  return postBlob(`${ACCOUNTS_BASE_PATH}/export`, {
+    body: validated,
   });
 }
 

@@ -315,21 +315,88 @@ export const handlers = [
 		return HttpResponse.json({ accounts: state.accounts });
 	}),
 
-	http.post("/api/accounts/import", async () => {
-		const sequence = state.accounts.length + 1;
-		const created = createAccountSummary({
-			accountId: `acc_imported_${sequence}`,
-			email: `imported-${sequence}@example.com`,
-			displayName: `imported-${sequence}@example.com`,
-			status: "active",
+	http.post("/api/accounts/import", async ({ request }) => {
+		const rawBody = await request.text();
+		const uploadedFiles = rawBody.match(/name="auth_json"/g) ?? ["auth_json"];
+		const importedAccounts = uploadedFiles.map((_, index) => {
+			const sequence = state.accounts.length + index + 1;
+			return createAccountSummary({
+				accountId: `acc_imported_${sequence}`,
+				email: `imported-${sequence}@example.com`,
+				displayName: `imported-${sequence}@example.com`,
+				status: "active",
+			});
 		});
-		state.accounts = [...state.accounts, created];
+		state.accounts = [...state.accounts, ...importedAccounts];
 		return HttpResponse.json({
-			accountId: created.accountId,
-			email: created.email,
-			planType: created.planType,
-			status: created.status,
+			accounts: importedAccounts.map((created) => ({
+				accountId: created.accountId,
+				email: created.email,
+				planType: created.planType,
+				status: created.status,
+			})),
+			skippedCount: 0,
 		});
+	}),
+
+	http.post("/api/accounts/export", async ({ request }) => {
+		const payload = await parseJsonBody(
+			request,
+			z.object({ accountIds: z.array(z.string()).min(1) }),
+		);
+		if (!payload) {
+			return HttpResponse.json(
+				{
+					error: {
+						code: "invalid_account_export_request",
+						message: "At least one account id is required",
+					},
+				},
+				{ status: 400 },
+			);
+		}
+		const missing = payload.accountIds.find((accountId) => !findAccount(accountId));
+		if (missing) {
+			return HttpResponse.json(
+				{ error: { code: "account_not_found", message: "Account not found" } },
+				{ status: 404 },
+			);
+		}
+		return new HttpResponse("zip-placeholder", {
+			status: 200,
+			headers: {
+				"Content-Type": "application/zip",
+				"Content-Disposition": 'attachment; filename="accounts-export.zip"',
+			},
+		});
+	}),
+
+	http.get("/api/accounts/:accountId/export", ({ params }) => {
+		const accountId = String(params.accountId);
+		const account = findAccount(accountId);
+		if (!account) {
+			return HttpResponse.json(
+				{ error: { code: "account_not_found", message: "Account not found" } },
+				{ status: 404 },
+			);
+		}
+		return new HttpResponse(
+			JSON.stringify({
+				tokens: {
+					idToken: "id-token",
+					accessToken: "access-token",
+					refreshToken: "refresh-token",
+				},
+				lastRefreshAt: "2026-04-14T00:00:00Z",
+			}),
+			{
+				status: 200,
+				headers: {
+					"Content-Type": "application/json",
+					"Content-Disposition": `attachment; filename="${accountId}.auth.json"`,
+				},
+			},
+		);
 	}),
 
 	http.post("/api/accounts/:accountId/pause", ({ params }) => {

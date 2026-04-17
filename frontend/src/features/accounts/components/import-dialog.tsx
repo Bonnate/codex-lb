@@ -18,7 +18,7 @@ export type ImportDialogProps = {
   busy: boolean;
   error: string | null;
   onOpenChange: (open: boolean) => void;
-  onImport: (file: File) => Promise<void>;
+  onImport: (files: File[]) => Promise<void>;
 };
 
 export function ImportDialog({
@@ -28,34 +28,35 @@ export function ImportDialog({
   onOpenChange,
   onImport,
 }: ImportDialogProps) {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!file) {
+    if (files.length === 0) {
       return;
     }
-    await onImport(file);
+    await onImport(files);
     onOpenChange(false);
-    setFile(null);
+    setFiles([]);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Import auth.json</DialogTitle>
-          <DialogDescription>Upload an exported account auth.json file.</DialogDescription>
+          <DialogTitle>계정 파일 가져오기</DialogTitle>
+          <DialogDescription>`.auth.json` 파일이나 내보낸 `.zip` 번들을 하나 이상 업로드하세요.</DialogDescription>
         </DialogHeader>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
-            <Label htmlFor="auth-json-file">File</Label>
+            <Label htmlFor="auth-json-file">파일</Label>
             <Input
               id="auth-json-file"
               type="file"
-              accept="application/json,.json"
-              onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+              accept="application/json,.json,application/zip,.zip"
+              multiple
+              onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
             />
           </div>
 
@@ -66,8 +67,8 @@ export function ImportDialog({
           ) : null}
 
           <DialogFooter>
-            <Button type="submit" disabled={busy || !file}>
-              Import
+            <Button type="submit" disabled={busy || files.length === 0}>
+              가져오기
             </Button>
           </DialogFooter>
         </form>

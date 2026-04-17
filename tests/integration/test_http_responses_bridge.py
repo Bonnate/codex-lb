@@ -101,7 +101,7 @@ async def _import_account(async_client, account_id: str, email: str) -> str:
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
     response = await async_client.post("/api/accounts/import", files=files)
     assert response.status_code == 200
-    return response.json()["accountId"]
+    return response.json()["accounts"][0]["accountId"]
 
 
 async def _get_account(account_id: str) -> Account:

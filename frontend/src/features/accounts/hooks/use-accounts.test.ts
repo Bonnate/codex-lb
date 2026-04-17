@@ -38,9 +38,11 @@ describe("useAccounts", () => {
     await result.current.resumeMutation.mutateAsync(firstAccountId as string);
 
     const imported = await result.current.importMutation.mutateAsync(
-      new File(["{}"], "auth.json", { type: "application/json" }),
+      [new File(["{}"], "auth.json", { type: "application/json" })],
     );
-    await result.current.deleteMutation.mutateAsync(imported.accountId);
+    await result.current.exportMutation.mutateAsync(firstAccountId as string);
+    await result.current.bulkExportMutation.mutateAsync([firstAccountId as string]);
+    await result.current.deleteMutation.mutateAsync(imported.accounts[0].accountId);
 
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["accounts", "list"] });

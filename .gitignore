@@ -21,6 +21,8 @@ build/
 dist/
 app/static/
 deploy/helm/*/charts/
+run-codex-lb.spec
+stop-codex-lb.spec
 
 # Node
 node_modules/
@@ -42,6 +44,8 @@ frontend/coverage/
 certs/
 
 .codex-lb/
+.codex-build-server*.log
+.codex-lb-local.pid
 .sisyphus/
 
 .specstory/

@@ -8,6 +8,9 @@ describe("AccountList", () => {
   it("renders items and filters by search", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
+    const onToggleExportSelection = vi.fn();
+    const onSetAllExportSelection = vi.fn();
+    const onExportSelected = vi.fn();
 
     render(
       <AccountList
@@ -30,20 +33,24 @@ describe("AccountList", () => {
           },
         ]}
         selectedAccountId="acc-1"
+        exportSelectedAccountIds={[]}
         onSelect={onSelect}
+        onToggleExportSelection={onToggleExportSelection}
+        onSetAllExportSelection={onSetAllExportSelection}
+        onExportSelected={onExportSelected}
         onOpenImport={() => {}}
         onOpenOauth={() => {}}
       />,
     );
 
-    expect(screen.getByText("primary@example.com")).toBeInTheDocument();
-    expect(screen.getByText("secondary@example.com")).toBeInTheDocument();
+    expect(screen.getAllByText("Primary")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("Secondary")[0]).toBeInTheDocument();
 
-    await user.type(screen.getByPlaceholderText("Search accounts..."), "secondary");
-    expect(screen.queryByText("primary@example.com")).not.toBeInTheDocument();
-    expect(screen.getByText("secondary@example.com")).toBeInTheDocument();
+    await user.type(screen.getByPlaceholderText("계정 검색..."), "secondary");
+    expect(screen.queryByText("Primary")).not.toBeInTheDocument();
+    expect(screen.getByText("Secondary")).toBeInTheDocument();
 
-    await user.click(screen.getByText("secondary@example.com"));
+    await user.click(screen.getByText("Secondary"));
     expect(onSelect).toHaveBeenCalledWith("acc-2");
   });
 
@@ -63,14 +70,18 @@ describe("AccountList", () => {
           },
         ]}
         selectedAccountId={null}
+        exportSelectedAccountIds={[]}
         onSelect={() => {}}
+        onToggleExportSelection={() => {}}
+        onSetAllExportSelection={() => {}}
+        onExportSelected={() => {}}
         onOpenImport={() => {}}
         onOpenOauth={() => {}}
       />,
     );
 
-    await user.type(screen.getByPlaceholderText("Search accounts..."), "not-found");
-    expect(screen.getByText("No matching accounts")).toBeInTheDocument();
+    await user.type(screen.getByPlaceholderText("계정 검색..."), "not-found");
+    expect(screen.getByText("일치하는 계정이 없습니다")).toBeInTheDocument();
   });
 
   it("shows account id only for duplicate emails", () => {
@@ -103,7 +114,11 @@ describe("AccountList", () => {
           },
         ]}
         selectedAccountId={null}
+        exportSelectedAccountIds={[]}
         onSelect={() => {}}
+        onToggleExportSelection={() => {}}
+        onSetAllExportSelection={() => {}}
+        onExportSelected={() => {}}
         onOpenImport={() => {}}
         onOpenOauth={() => {}}
       />,
@@ -113,5 +128,36 @@ describe("AccountList", () => {
     expect(screen.getByText((_content, el) => el?.tagName === "P" && !!el.textContent?.match(/dup@example\.com \| ID 7f9de2ad\.\.\.a95cee/))).toBeInTheDocument();
     expect(screen.getByText("unique@example.com")).toBeInTheDocument();
     expect(screen.queryByText((_content, el) => el?.tagName === "P" && !!el.textContent?.match(/unique@example\.com \| ID/))).not.toBeInTheDocument();
+  });
+
+  it("exports selected accounts from the toolbar", async () => {
+    const user = userEvent.setup();
+    const onExportSelected = vi.fn();
+
+    render(
+      <AccountList
+        accounts={[
+          {
+            accountId: "acc-1",
+            email: "primary@example.com",
+            displayName: "Primary",
+            planType: "plus",
+            status: "active",
+            additionalQuotas: [],
+          },
+        ]}
+        selectedAccountId="acc-1"
+        exportSelectedAccountIds={["acc-1"]}
+        onSelect={() => {}}
+        onToggleExportSelection={() => {}}
+        onSetAllExportSelection={() => {}}
+        onExportSelected={onExportSelected}
+        onOpenImport={() => {}}
+        onOpenOauth={() => {}}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "선택 내보내기" }));
+    expect(onExportSelected).toHaveBeenCalledTimes(1);
   });
 });

@@ -66,7 +66,7 @@ export function useOauth() {
         OAuthStateSchema.parse({
           ...prev,
           status: "error",
-          errorMessage: error instanceof Error ? error.message : "Failed to poll OAuth status",
+          errorMessage: error instanceof Error ? error.message : "OAuth 상태를 확인하지 못했습니다",
         }),
       );
     }
@@ -106,7 +106,7 @@ export function useOauth() {
 
       return nextState;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to start OAuth";
+      const message = error instanceof Error ? error.message : "OAuth를 시작하지 못했습니다";
       setState((prev) =>
         OAuthStateSchema.parse({
           ...prev,
@@ -135,7 +135,7 @@ export function useOauth() {
         OAuthStateSchema.parse({
           ...prev,
           status: "error",
-          errorMessage: error instanceof Error ? error.message : "Failed to complete OAuth",
+          errorMessage: error instanceof Error ? error.message : "OAuth를 완료하지 못했습니다",
         }),
       );
       throw error;
@@ -158,7 +158,7 @@ export function useOauth() {
         OAuthStateSchema.parse({
           ...prev,
           status: "error",
-          errorMessage: error instanceof Error ? error.message : "Failed to process OAuth callback",
+          errorMessage: error instanceof Error ? error.message : "OAuth 콜백을 처리하지 못했습니다",
         }),
       );
       throw error;

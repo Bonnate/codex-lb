@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import base64
+import io
 import json
+import zipfile
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -68,6 +70,11 @@ def _iso_utc(epoch_seconds: int) -> str:
     )
 
 
+def _first_imported_account(response) -> dict[str, object]:
+    payload = response.json()
+    return payload["accounts"][0]
+
+
 @pytest.mark.asyncio
 async def test_import_invalid_json_returns_400(async_client):
     files = {"auth_json": ("auth.json", "not-json", "application/json")}
@@ -93,9 +100,76 @@ async def test_import_falls_back_to_email_based_account_id(async_client):
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
     response = await async_client.post("/api/accounts/import", files=files)
     assert response.status_code == 200
-    payload = response.json()
+    payload = _first_imported_account(response)
     assert payload["accountId"] == fallback_account_id(email)
     assert payload["email"] == email
+
+
+@pytest.mark.asyncio
+async def test_import_accepts_multiple_auth_files(async_client):
+    files = [
+        (
+            "auth_json",
+            ("first.auth.json", json.dumps(_make_auth_json("acc_multi_one", "multi-one@example.com")), "application/json"),
+        ),
+        (
+            "auth_json",
+            ("second.auth.json", json.dumps(_make_auth_json("acc_multi_two", "multi-two@example.com")), "application/json"),
+        ),
+    ]
+
+    response = await async_client.post("/api/accounts/import", files=files)
+    assert response.status_code == 200
+
+    payload = response.json()
+    assert [account["email"] for account in payload["accounts"]] == [
+        "multi-one@example.com",
+        "multi-two@example.com",
+    ]
+    assert payload["skippedCount"] == 0
+
+
+@pytest.mark.asyncio
+async def test_import_accepts_exported_archive_bundle(async_client):
+    archive_buffer = io.BytesIO()
+    with zipfile.ZipFile(archive_buffer, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(
+            "bundle-one.auth.json",
+            json.dumps(_make_auth_json("acc_bundle_one", "bundle-one@example.com")),
+        )
+        archive.writestr(
+            "nested/bundle-two.auth.json",
+            json.dumps(_make_auth_json("acc_bundle_two", "bundle-two@example.com", "pro")),
+        )
+
+    files = {
+        "auth_json": ("accounts-export.zip", archive_buffer.getvalue(), "application/zip")
+    }
+
+    response = await async_client.post("/api/accounts/import", files=files)
+    assert response.status_code == 200
+
+    payload = response.json()
+    assert [account["email"] for account in payload["accounts"]] == [
+        "bundle-one@example.com",
+        "bundle-two@example.com",
+    ]
+    assert payload["skippedCount"] == 0
+
+
+@pytest.mark.asyncio
+async def test_import_zip_without_auth_payloads_returns_400(async_client):
+    archive_buffer = io.BytesIO()
+    with zipfile.ZipFile(archive_buffer, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("notes.txt", "not an auth payload")
+
+    files = {
+        "auth_json": ("accounts-export.zip", archive_buffer.getvalue(), "application/zip")
+    }
+    response = await async_client.post("/api/accounts/import", files=files)
+    assert response.status_code == 400
+    payload = response.json()
+    assert payload["error"]["code"] == "invalid_auth_json"
 
 
 @pytest.mark.asyncio
@@ -113,12 +187,13 @@ async def test_import_overwrites_for_same_account_identity_when_overwrite_enable
     assert settings.json()["importWithoutOverwrite"] is False
 
     email = "same-default@example.com"
-    raw_account_id = "acc_same_default"
+    first_raw_account_id = "acc_same_default_one"
+    second_raw_account_id = "acc_same_default_two"
 
     files_one = {
         "auth_json": (
             "auth.json",
-            json.dumps(_make_auth_json(raw_account_id, email, "plus")),
+            json.dumps(_make_auth_json(first_raw_account_id, email, "plus")),
             "application/json",
         )
     }
@@ -128,17 +203,17 @@ async def test_import_overwrites_for_same_account_identity_when_overwrite_enable
     files_two = {
         "auth_json": (
             "auth.json",
-            json.dumps(_make_auth_json(raw_account_id, email, "team")),
+            json.dumps(_make_auth_json(second_raw_account_id, email, "team")),
             "application/json",
         )
     }
     second = await async_client.post("/api/accounts/import", files=files_two)
     assert second.status_code == 200
 
-    expected_account_id = generate_unique_account_id(raw_account_id, email)
-    assert first.json()["accountId"] == expected_account_id
-    assert second.json()["accountId"] == expected_account_id
-    assert second.json()["planType"] == "team"
+    expected_account_id = generate_unique_account_id(first_raw_account_id, email)
+    assert _first_imported_account(first)["accountId"] == expected_account_id
+    assert _first_imported_account(second)["accountId"] == expected_account_id
+    assert _first_imported_account(second)["planType"] == "team"
 
     accounts_response = await async_client.get("/api/accounts")
     assert accounts_response.status_code == 200
@@ -163,12 +238,13 @@ async def test_import_without_overwrite_keeps_same_account_identity_separate(asy
     assert settings.json()["importWithoutOverwrite"] is True
 
     email = "same-separate@example.com"
-    raw_account_id = "acc_same_separate"
+    first_raw_account_id = "acc_same_separate_one"
+    second_raw_account_id = "acc_same_separate_two"
 
     files_one = {
         "auth_json": (
             "auth.json",
-            json.dumps(_make_auth_json(raw_account_id, email, "plus")),
+            json.dumps(_make_auth_json(first_raw_account_id, email, "plus")),
             "application/json",
         )
     }
@@ -178,26 +254,27 @@ async def test_import_without_overwrite_keeps_same_account_identity_separate(asy
     files_two = {
         "auth_json": (
             "auth.json",
-            json.dumps(_make_auth_json(raw_account_id, email, "team")),
+            json.dumps(_make_auth_json(second_raw_account_id, email, "team")),
             "application/json",
         )
     }
     second = await async_client.post("/api/accounts/import", files=files_two)
     assert second.status_code == 200
 
-    base_account_id = generate_unique_account_id(raw_account_id, email)
-    first_id = first.json()["accountId"]
-    second_id = second.json()["accountId"]
-    assert first_id == base_account_id
+    first_expected_id = generate_unique_account_id(first_raw_account_id, email)
+    second_expected_id = generate_unique_account_id(second_raw_account_id, email)
+    first_id = _first_imported_account(first)["accountId"]
+    second_id = _first_imported_account(second)["accountId"]
+    assert first_id == first_expected_id
     assert second_id != first_id
-    assert second_id.startswith(f"{base_account_id}__copy")
+    assert second_id == second_expected_id
 
     accounts_response = await async_client.get("/api/accounts")
     assert accounts_response.status_code == 200
     accounts = [entry for entry in accounts_response.json()["accounts"] if entry["email"] == email]
     assert len(accounts) == 2
     ids = {entry["accountId"] for entry in accounts}
-    assert ids == {first_id, second_id}
+    assert ids == {first_expected_id, second_expected_id}
 
 
 @pytest.mark.asyncio
@@ -215,14 +292,15 @@ async def test_import_returns_409_when_overwrite_mode_cannot_resolve_duplicate_e
     assert enable_separate.json()["importWithoutOverwrite"] is True
 
     email = "conflict@example.com"
-    raw_account_id = "acc_conflict_base"
+    first_raw_account_id = "acc_conflict_base_one"
+    second_raw_account_id = "acc_conflict_base_two"
 
     first = await async_client.post(
         "/api/accounts/import",
         files={
             "auth_json": (
                 "auth.json",
-                json.dumps(_make_auth_json(raw_account_id, email, "plus")),
+                json.dumps(_make_auth_json(first_raw_account_id, email, "plus")),
                 "application/json",
             )
         },
@@ -234,13 +312,13 @@ async def test_import_returns_409_when_overwrite_mode_cannot_resolve_duplicate_e
         files={
             "auth_json": (
                 "auth.json",
-                json.dumps(_make_auth_json(raw_account_id, email, "team")),
+                json.dumps(_make_auth_json(second_raw_account_id, email, "team")),
                 "application/json",
             )
         },
     )
     assert second.status_code == 200
-    assert second.json()["accountId"] != first.json()["accountId"]
+    assert _first_imported_account(second)["accountId"] != _first_imported_account(first)["accountId"]
 
     enable_overwrite = await async_client.put(
         "/api/settings",

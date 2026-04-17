@@ -10,6 +10,12 @@ type RequestOptions = {
   credentials?: RequestCredentials;
 };
 
+export type BlobResult = {
+  blob: Blob;
+  filename: string | null;
+  contentType: string | null;
+};
+
 const JSON_CONTENT_TYPE = "application/json";
 const EMPTY_RESPONSE_STATUS = new Set([204, 205]);
 
@@ -113,6 +119,22 @@ function parseApiErrorPayload(payload: unknown): {
   };
 }
 
+function parseAttachmentFilename(value: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+  const utf8Match = /filename\*=UTF-8''([^;]+)/i.exec(value);
+  if (utf8Match) {
+    try {
+      return decodeURIComponent(utf8Match[1]);
+    } catch {
+      return utf8Match[1];
+    }
+  }
+  const simpleMatch = /filename="?([^"]+)"?/i.exec(value);
+  return simpleMatch ? simpleMatch[1] : null;
+}
+
 async function request(
   method: HttpMethod,
   url: string,
@@ -195,6 +217,58 @@ async function request<T>(
   return parsed.data;
 }
 
+async function requestBlob(
+  method: HttpMethod,
+  url: string,
+  options?: RequestOptions,
+): Promise<BlobResult> {
+  const requestBody = buildRequestBody(options?.body);
+  const headers = new Headers(options?.headers);
+  if (requestBody.contentType && !headers.has("Content-Type")) {
+    headers.set("Content-Type", requestBody.contentType);
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method,
+      body: requestBody.body,
+      headers,
+      signal: options?.signal,
+      credentials: options?.credentials ?? "same-origin",
+    });
+  } catch (error) {
+    throw new ApiError({
+      status: 0,
+      code: "network_error",
+      message: error instanceof Error ? error.message : "Network request failed",
+      details: error,
+    });
+  }
+
+  if (response.status === 401) {
+    unauthorizedHandler?.();
+  }
+
+  if (!response.ok) {
+    const payload = await readJsonPayload(response);
+    const parsedError = parseApiErrorPayload(payload);
+    throw new ApiError({
+      status: response.status,
+      code: parsedError.code,
+      message: parsedError.message,
+      details: parsedError.details,
+      payload,
+    });
+  }
+
+  return {
+    blob: await response.blob(),
+    filename: parseAttachmentFilename(response.headers.get("Content-Disposition")),
+    contentType: response.headers.get("Content-Type"),
+  };
+}
+
 export function get<T>(
   url: string,
   schema: ZodType<T>,
@@ -203,12 +277,26 @@ export function get<T>(
   return request("GET", url, schema, options);
 }
 
+export function getBlob(
+  url: string,
+  options?: RequestOptions,
+): Promise<BlobResult> {
+  return requestBlob("GET", url, options);
+}
+
 export function post<T>(
   url: string,
   schema: ZodType<T>,
   options?: RequestOptions,
 ): Promise<T> {
   return request("POST", url, schema, options);
+}
+
+export function postBlob(
+  url: string,
+  options?: RequestOptions,
+): Promise<BlobResult> {
+  return requestBlob("POST", url, options);
 }
 
 export function patch<T>(

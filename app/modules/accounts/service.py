@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import io
 import json
+import zipfile
+from dataclasses import dataclass
 from datetime import timedelta
+from datetime import timezone
 from typing import cast
 
 from pydantic import ValidationError
@@ -9,6 +13,8 @@ from pydantic import ValidationError
 from app.core.auth import (
     DEFAULT_EMAIL,
     DEFAULT_PLAN,
+    AuthFile,
+    AuthTokens,
     claims_from_auth,
     generate_unique_account_id,
     parse_auth_json,
@@ -25,6 +31,7 @@ from app.modules.accounts.schemas import (
     AccountAdditionalQuota,
     AccountAdditionalWindow,
     AccountImportResponse,
+    ImportedAccount,
     AccountRequestUsage,
     AccountSummary,
     AccountTrendsResponse,
@@ -40,6 +47,18 @@ _DETAIL_BUCKET_SECONDS = 3600  # 1h → 168 points
 
 class InvalidAuthJsonError(Exception):
     pass
+
+
+class InvalidAccountExportRequestError(Exception):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class ExportedAccountFile:
+    filename: str
+    content: bytes
+    media_type: str
+    account_ids: list[str]
 
 
 class AccountsService:
@@ -142,16 +161,123 @@ class AccountsService:
             secondary=trend.secondary if trend else [],
         )
 
-    async def import_account(self, raw: bytes) -> AccountImportResponse:
+    async def import_accounts(self, raw_files: list[bytes]) -> AccountImportResponse:
+        auth_payloads = self._expand_import_auth_payloads(raw_files)
+        parsed_auth_files = [self._parse_import_auth(raw) for raw in auth_payloads]
+        imported_accounts: list[ImportedAccount] = []
+        saved_accounts: list[Account] = []
+        skipped_count = 0
+
+        for auth in parsed_auth_files:
+            saved = await self._import_parsed_auth(auth)
+            if saved is None:
+                skipped_count += 1
+                continue
+            saved_accounts.append(saved)
+            imported_accounts.append(self._build_imported_account(saved))
+
+        if self._usage_repo and self._usage_updater and saved_accounts:
+            latest_usage = await self._usage_repo.latest_by_account(window="primary")
+            await self._usage_updater.refresh_accounts(saved_accounts, latest_usage)
+
+        get_account_selection_cache().invalidate()
+        return AccountImportResponse(accounts=imported_accounts, skipped_count=skipped_count)
+
+    async def export_account(self, account_id: str) -> ExportedAccountFile | None:
+        account = await self._repo.get_by_id(account_id)
+        if account is None:
+            return None
+        return ExportedAccountFile(
+            filename=f"{_sanitize_export_filename(account.id)}.auth.json",
+            content=self._build_export_account_content(account),
+            media_type="application/json",
+            account_ids=[account.id],
+        )
+
+    async def export_accounts(self, account_ids: list[str]) -> ExportedAccountFile | None:
+        normalized_account_ids = _normalize_export_account_ids(account_ids)
+        if not normalized_account_ids:
+            raise InvalidAccountExportRequestError("At least one account id is required")
+
+        accounts = await self._repo.list_by_ids(normalized_account_ids)
+        accounts_by_id = {account.id: account for account in accounts}
+        if len(accounts_by_id) != len(normalized_account_ids):
+            return None
+
+        archive_buffer = io.BytesIO()
+        with zipfile.ZipFile(archive_buffer, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
+            for account_id in normalized_account_ids:
+                account = accounts_by_id[account_id]
+                archive.writestr(
+                    f"{_sanitize_export_filename(account.id)}.auth.json",
+                    self._build_export_account_content(account),
+                )
+
+        return ExportedAccountFile(
+            filename="accounts-export.zip",
+            content=archive_buffer.getvalue(),
+            media_type="application/zip",
+            account_ids=normalized_account_ids,
+        )
+
+    def _parse_import_auth(self, raw: bytes) -> AuthFile:
         try:
-            auth = parse_auth_json(raw)
+            return parse_auth_json(raw)
         except (json.JSONDecodeError, ValidationError, UnicodeDecodeError, TypeError) as exc:
             raise InvalidAuthJsonError("Invalid auth.json payload") from exc
+
+    def _expand_import_auth_payloads(self, raw_files: list[bytes]) -> list[bytes]:
+        payloads: list[bytes] = []
+        for raw in raw_files:
+            payloads.extend(self._extract_import_payloads(raw))
+        if not payloads:
+            raise InvalidAuthJsonError("Invalid auth.json payload")
+        return payloads
+
+    def _extract_import_payloads(self, raw: bytes) -> list[bytes]:
+        buffer = io.BytesIO(raw)
+        if not zipfile.is_zipfile(buffer):
+            return [raw]
+
+        archive_payloads: list[bytes] = []
+        buffer.seek(0)
+        with zipfile.ZipFile(buffer) as archive:
+            for entry in archive.infolist():
+                if entry.is_dir():
+                    continue
+                filename = entry.filename.rsplit("/", 1)[-1]
+                if not filename.lower().endswith(".json"):
+                    continue
+                archive_payloads.append(archive.read(entry))
+        if not archive_payloads:
+            raise InvalidAuthJsonError("Invalid auth.json payload")
+        return archive_payloads
+
+    def _build_export_account_content(self, account: Account) -> bytes:
+        payload = AuthFile(
+            tokens=AuthTokens(
+                idToken=self._encryptor.decrypt(account.id_token_encrypted),
+                accessToken=self._encryptor.decrypt(account.access_token_encrypted),
+                refreshToken=self._encryptor.decrypt(account.refresh_token_encrypted),
+                accountId=account.chatgpt_account_id,
+            ),
+            lastRefreshAt=account.last_refresh.replace(tzinfo=timezone.utc),
+        )
+        return json.dumps(
+            payload.model_dump(mode="json", by_alias=True, exclude_none=True),
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ).encode("utf-8")
+
+    async def _import_parsed_auth(self, auth: AuthFile) -> Account | None:
         claims = claims_from_auth(auth)
 
         email = claims.email or DEFAULT_EMAIL
         raw_account_id = claims.account_id
         account_id = generate_unique_account_id(raw_account_id, email)
+        existing_account = await self._repo.get_by_id(account_id)
+        if existing_account is not None:
+            return None
         plan_type = coerce_account_plan_type(claims.plan_type, DEFAULT_PLAN)
         last_refresh = to_utc_naive(auth.last_refresh_at) if auth.last_refresh_at else utcnow()
 
@@ -169,11 +295,10 @@ class AccountsService:
         )
 
         saved = await self._repo.upsert(account)
-        if self._usage_repo and self._usage_updater:
-            latest_usage = await self._usage_repo.latest_by_account(window="primary")
-            await self._usage_updater.refresh_accounts([saved], latest_usage)
-        get_account_selection_cache().invalidate()
-        return AccountImportResponse(
+        return saved
+
+    def _build_imported_account(self, saved: Account) -> ImportedAccount:
+        return ImportedAccount(
             account_id=saved.id,
             email=saved.email,
             plan_type=saved.plan_type,
@@ -201,3 +326,20 @@ class AccountsService:
             if poller is not None:
                 await poller.bump(NAMESPACE_API_KEY)
         return result
+
+
+def _sanitize_export_filename(account_id: str) -> str:
+    sanitized = "".join(char if char.isalnum() or char in {"-", "_", "."} else "_" for char in account_id)
+    return sanitized or "account"
+
+
+def _normalize_export_account_ids(account_ids: list[str]) -> list[str]:
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for account_id in account_ids:
+        stripped = account_id.strip()
+        if not stripped or stripped in seen:
+            continue
+        normalized.append(stripped)
+        seen.add(stripped)
+    return normalized

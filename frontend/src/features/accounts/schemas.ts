@@ -74,11 +74,20 @@ export const AccountsResponseSchema = z.object({
   accounts: z.array(AccountSummarySchema),
 });
 
-export const AccountImportResponseSchema = z.object({
+export const ImportedAccountSchema = z.object({
   accountId: z.string(),
   email: z.string(),
   planType: z.string(),
   status: z.string(),
+});
+
+export const AccountImportResponseSchema = z.object({
+  accounts: z.array(ImportedAccountSchema),
+  skippedCount: z.number().int().nonnegative(),
+});
+
+export const AccountBulkExportRequestSchema = z.object({
+  accountIds: z.array(z.string().min(1)).min(1),
 });
 
 export const AccountActionResponseSchema = z.object({
@@ -151,6 +160,8 @@ export type AccountSummary = z.infer<typeof AccountSummarySchema>;
 export type AccountAdditionalWindow = z.infer<typeof AccountAdditionalWindowSchema>;
 export type AccountAdditionalQuota = z.infer<typeof AccountAdditionalQuotaSchema>;
 export type AccountTrendsResponse = z.infer<typeof AccountTrendsResponseSchema>;
+export type ImportedAccount = z.infer<typeof ImportedAccountSchema>;
+export type AccountBulkExportRequest = z.infer<typeof AccountBulkExportRequestSchema>;
 export type OauthStartResponse = z.infer<typeof OauthStartResponseSchema>;
 export type OauthStatusResponse = z.infer<typeof OauthStatusResponseSchema>;
 export type ManualOauthCallbackResponse = z.infer<typeof ManualOauthCallbackResponseSchema>;
