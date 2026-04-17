@@ -351,11 +351,43 @@ def test_responses_accepts_string_input():
     assert request.input == [{"role": "user", "content": [{"type": "input_text", "text": "hello"}]}]
 
 
+def test_responses_normalizes_nested_function_tools_and_tool_choice():
+    payload = {
+        "model": "gpt-5.1",
+        "instructions": "hi",
+        "input": [],
+        "tools": [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_weather",
+                    "description": "Get weather",
+                    "parameters": {"type": "object", "properties": {"city": {"type": "string"}}},
+                },
+            }
+        ],
+        "tool_choice": {"type": "function", "function": {"name": "get_weather"}},
+    }
+
+    request = ResponsesRequest.model_validate(payload)
+
+    assert request.tools == [
+        {
+            "type": "function",
+            "name": "get_weather",
+            "description": "Get weather",
+            "parameters": {"type": "object", "properties": {"city": {"type": "string"}}},
+        }
+    ]
+    assert request.tool_choice == {"type": "function", "name": "get_weather"}
+
+
 @pytest.mark.parametrize(
     ("tool_type", "expected"),
     [
         ("web_search", "web_search"),
         ("web_search_preview", "web_search"),
+        ("image_generation", "image_generation"),
     ],
 )
 def test_responses_accepts_builtin_tools(tool_type, expected):
@@ -466,6 +498,80 @@ def test_v1_instructions_merge():
     assert request.instructions == "primary\nsecondary"
 
 
+def test_v1_responses_normalizes_nested_function_tools_and_tool_choice():
+    payload = {
+        "model": "gpt-5.1",
+        "input": [],
+        "tools": [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_weather",
+                    "description": "Get weather",
+                    "parameters": {"type": "object", "properties": {"city": {"type": "string"}}},
+                },
+            }
+        ],
+        "tool_choice": {"type": "function", "function": {"name": "get_weather"}},
+    }
+
+    request = V1ResponsesRequest.model_validate(payload).to_responses_request()
+
+    assert request.tools == [
+        {
+            "type": "function",
+            "name": "get_weather",
+            "description": "Get weather",
+            "parameters": {"type": "object", "properties": {"city": {"type": "string"}}},
+        }
+    ]
+    assert request.tool_choice == {"type": "function", "name": "get_weather"}
+
+
+def test_v1_responses_accepts_codex_websocket_tool_mix():
+    payload = {
+        "model": "gpt-5.4",
+        "input": [],
+        "tool_choice": "auto",
+        "tools": [
+            {
+                "type": "function",
+                "name": "exec_command",
+                "description": "Runs a shell command.",
+                "strict": False,
+                "parameters": {
+                    "type": "object",
+                    "properties": {"cmd": {"type": "string"}},
+                    "required": ["cmd"],
+                    "additionalProperties": False,
+                },
+            },
+            {"type": "web_search", "external_web_access": False},
+            {"type": "image_generation", "output_format": "png"},
+        ],
+    }
+
+    request = V1ResponsesRequest.model_validate(payload).to_responses_request()
+
+    assert request.tool_choice == "auto"
+    assert request.tools == [
+        {
+            "type": "function",
+            "name": "exec_command",
+            "description": "Runs a shell command.",
+            "strict": False,
+            "parameters": {
+                "type": "object",
+                "properties": {"cmd": {"type": "string"}},
+                "required": ["cmd"],
+                "additionalProperties": False,
+            },
+        },
+        {"type": "web_search", "external_web_access": False},
+        {"type": "image_generation", "output_format": "png"},
+    ]
+
+
 def test_v1_messages_and_input_conflict():
     payload = {
         "model": "gpt-5.1",
@@ -482,12 +588,6 @@ def test_v1_input_string_passthrough():
     request = V1ResponsesRequest.model_validate(payload).to_responses_request()
 
     assert request.input == [{"role": "user", "content": [{"type": "input_text", "text": "hello"}]}]
-
-
-def test_v1_rejects_builtin_tools():
-    payload = {"model": "gpt-5.1", "input": [], "tools": [{"type": "image_generation"}]}
-    with pytest.raises(ValidationError, match="Unsupported tool type"):
-        V1ResponsesRequest.model_validate(payload)
 
 
 def test_v1_compact_messages_convert():

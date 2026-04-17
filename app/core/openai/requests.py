@@ -26,7 +26,6 @@ UNSUPPORTED_TOOL_TYPES = {
     "code_interpreter",
     "computer_use",
     "computer_use_preview",
-    "image_generation",
 }
 
 _TOOL_TYPE_ALIASES = {
@@ -69,9 +68,58 @@ def normalize_tool_choice(choice: JsonValue | None) -> JsonValue | None:
     return choice
 
 
-def validate_tool_types(tools: list[JsonValue]) -> list[JsonValue]:
+def normalize_function_tools(tools: list[JsonValue]) -> list[JsonValue]:
     normalized_tools: list[JsonValue] = []
     for tool in tools:
+        if not is_json_mapping(tool):
+            normalized_tools.append(tool)
+            continue
+        tool_mapping = tool
+        tool_type = tool_mapping.get("type")
+        function = tool_mapping.get("function")
+        if is_json_mapping(function):
+            name = function.get("name")
+            if not isinstance(name, str) or not name:
+                normalized_tools.append(tool)
+                continue
+            normalized_tools.append(
+                {
+                    "type": tool_type or "function",
+                    "name": name,
+                    "description": function.get("description"),
+                    "parameters": function.get("parameters"),
+                }
+            )
+            continue
+        if isinstance(tool_type, str):
+            normalized_type = normalize_tool_type(tool_type)
+            if normalized_type != tool_type:
+                updated = dict(tool_mapping)
+                updated["type"] = normalized_type
+                normalized_tools.append(updated)
+                continue
+        normalized_tools.append(tool)
+    return normalized_tools
+
+
+def normalize_function_tool_choice(choice: JsonValue | None) -> JsonValue | None:
+    if not is_json_mapping(choice):
+        return normalize_tool_choice(choice)
+    choice_mapping = normalize_tool_choice(choice)
+    if not is_json_mapping(choice_mapping):
+        return choice_mapping
+    tool_type = choice_mapping.get("type")
+    function = choice_mapping.get("function")
+    if is_json_mapping(function):
+        name = function.get("name")
+        if isinstance(name, str) and name:
+            return {"type": tool_type or "function", "name": name}
+    return choice_mapping
+
+
+def validate_tool_types(tools: list[JsonValue]) -> list[JsonValue]:
+    normalized_tools: list[JsonValue] = []
+    for tool in normalize_function_tools(tools):
         if not is_json_mapping(tool):
             normalized_tools.append(tool)
             continue
@@ -384,7 +432,7 @@ class ResponsesRequest(BaseModel):
     @field_validator("tool_choice")
     @classmethod
     def _normalize_tool_choice_field(cls, value: JsonValue | None) -> JsonValue | None:
-        return normalize_tool_choice(value)
+        return normalize_function_tool_choice(value)
 
     @field_validator("service_tier")
     @classmethod
