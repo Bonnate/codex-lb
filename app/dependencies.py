@@ -232,7 +232,9 @@ def get_settings_context(
     session: AsyncSession = Depends(get_session),
 ) -> SettingsContext:
     repository = SettingsRepository(session)
-    service = SettingsService(repository)
+    accounts_repository = AccountsRepository(session)
+    api_keys_repository = ApiKeysRepository(session)
+    service = SettingsService(repository, accounts_repository, api_keys_repository)
     return SettingsContext(session=session, repository=repository, service=service)
 
 

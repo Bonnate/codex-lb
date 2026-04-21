@@ -5,9 +5,9 @@ import { useTimeFormatStore, type TimeFormatPreference } from "@/hooks/use-time-
 import { cn } from "@/lib/utils";
 
 const THEME_OPTIONS: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
-  { value: "light", label: "Light", icon: Sun },
-  { value: "dark", label: "Dark", icon: Moon },
-  { value: "auto", label: "System", icon: Monitor },
+  { value: "light", label: "라이트", icon: Sun },
+  { value: "dark", label: "다크", icon: Moon },
+  { value: "auto", label: "시스템", icon: Monitor },
 ];
 
 const TIME_FORMAT_OPTIONS: { value: TimeFormatPreference; label: string; preview: string }[] = [
@@ -30,16 +30,16 @@ export function AppearanceSettings() {
               <Palette className="h-4 w-4 text-primary" aria-hidden="true" />
             </div>
              <div>
-               <h3 className="text-sm font-semibold">Appearance</h3>
-               <p className="text-xs text-muted-foreground">Choose how the interface looks and how time is displayed.</p>
+               <h3 className="text-sm font-semibold">화면 표시</h3>
+               <p className="text-xs text-muted-foreground">인터페이스 모양과 시간 표시 방식을 선택합니다.</p>
              </div>
            </div>
          </div>
 
         <div className="flex items-center justify-between rounded-lg border p-3">
           <div>
-            <p className="text-sm font-medium">Theme</p>
-            <p className="text-xs text-muted-foreground">Select your preferred color scheme.</p>
+            <p className="text-sm font-medium">테마</p>
+            <p className="text-xs text-muted-foreground">선호하는 색상 구성을 선택하세요.</p>
           </div>
           <div className="flex items-center gap-1 rounded-lg border border-border/50 bg-muted/40 p-0.5">
             {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
@@ -68,8 +68,8 @@ export function AppearanceSettings() {
               <Clock3 className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
             </div>
             <div>
-              <p className="text-sm font-medium">Time format</p>
-              <p className="text-xs text-muted-foreground">Apply 12h or 24h formatting to datetimes across the dashboard.</p>
+              <p className="text-sm font-medium">시간 형식</p>
+              <p className="text-xs text-muted-foreground">대시보드 전체 날짜와 시간 표시 형식에 적용합니다.</p>
             </div>
           </div>
           <div className="flex items-center gap-1 rounded-lg border border-border/50 bg-muted/40 p-0.5">

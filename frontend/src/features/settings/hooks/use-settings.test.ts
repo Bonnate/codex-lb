@@ -46,6 +46,9 @@ describe("useSettings", () => {
 
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["settings", "detail"] });
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["accounts", "list"] });
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["dashboard", "overview"] });
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["api-keys", "list"] });
     });
   });
 });

@@ -5,6 +5,8 @@ import os
 import socket
 
 from fastapi import APIRouter, Body, Depends, Request
+from fastapi.responses import Response
+from starlette.datastructures import UploadFile
 
 from app.core.audit.service import AuditService
 from app.core.auth.dependencies import set_dashboard_error_format, validate_dashboard_session
@@ -12,11 +14,12 @@ from app.core.config.settings_cache import get_settings_cache
 from app.core.exceptions import DashboardBadRequestError
 from app.dependencies import SettingsContext, get_settings_context
 from app.modules.settings.schemas import (
+    DashboardRestoreResponse,
     DashboardSettingsResponse,
     DashboardSettingsUpdateRequest,
     RuntimeConnectAddressResponse,
 )
-from app.modules.settings.service import DashboardSettingsUpdateData
+from app.modules.settings.service import DashboardSettingsUpdateData, InvalidDashboardBackupError
 
 LOOPBACK_HOSTS = {"localhost", "127.0.0.1", "::1", "[::1]"}
 
@@ -96,6 +99,61 @@ async def get_runtime_connect_address(request: Request) -> RuntimeConnectAddress
     return RuntimeConnectAddressResponse(connect_address=_resolve_runtime_connect_address(request))
 
 
+@router.get("/backup")
+async def export_backup(
+    request: Request,
+    context: SettingsContext = Depends(get_settings_context),
+) -> Response:
+    backup = await context.service.export_backup()
+    AuditService.log_async(
+        "settings_backup_exported",
+        actor_ip=request.client.host if request.client else None,
+    )
+    return Response(
+        content=backup.model_dump_json(by_alias=True),
+        media_type="application/json",
+        headers={"Content-Disposition": 'attachment; filename="codex-lb-backup.json"'},
+    )
+
+
+@router.post("/restore", response_model=DashboardRestoreResponse)
+async def restore_backup(
+    request: Request,
+    context: SettingsContext = Depends(get_settings_context),
+) -> DashboardRestoreResponse:
+    form = await request.form()
+    raw_files = [
+        value
+        for _, value in form.multi_items()
+        if isinstance(value, UploadFile)
+    ]
+    if len(raw_files) != 1:
+        raise DashboardBadRequestError("Exactly one backup file is required", code="invalid_backup_payload")
+    raw = await raw_files[0].read()
+    try:
+        restored = await context.service.restore_backup(raw)
+    except InvalidDashboardBackupError as exc:
+        raise DashboardBadRequestError(str(exc), code="invalid_backup_payload") from exc
+    AuditService.log_async(
+        "settings_restored",
+        actor_ip=request.client.host if request.client else None,
+        details={
+            "settings_applied": restored.settings_applied,
+            "accounts_imported": restored.accounts_imported,
+            "accounts_skipped": restored.accounts_skipped,
+            "api_keys_imported": restored.api_keys_imported,
+            "api_keys_skipped": restored.api_keys_skipped,
+        },
+    )
+    return DashboardRestoreResponse(
+        settings_applied=restored.settings_applied,
+        accounts_imported=restored.accounts_imported,
+        accounts_skipped=restored.accounts_skipped,
+        api_keys_imported=restored.api_keys_imported,
+        api_keys_skipped=restored.api_keys_skipped,
+    )
+
+
 @router.put("", response_model=DashboardSettingsResponse)
 async def update_settings(
     request: Request,
@@ -159,7 +217,9 @@ async def update_settings(
             "prefer_earlier_reset_accounts",
             "routing_strategy",
             "openai_cache_affinity_max_age_seconds",
+            "http_responses_session_bridge_prompt_cache_idle_ttl_seconds",
             "http_responses_session_bridge_gateway_safe_mode",
+            "sticky_reallocation_budget_threshold_pct",
             "import_without_overwrite",
             "totp_required_on_login",
             "api_key_auth_enabled",

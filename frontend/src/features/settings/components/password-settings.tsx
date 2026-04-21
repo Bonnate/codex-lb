@@ -98,7 +98,7 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
         bootstrapToken: values.bootstrapToken?.trim() ? values.bootstrapToken.trim() : undefined,
       });
       await refreshSession();
-      toast.success("Password configured");
+      toast.success("비밀번호를 설정했습니다");
       closeDialog();
     } catch (caught) {
       setError(getErrorMessage(caught));
@@ -109,7 +109,7 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
     setError(null);
     try {
       await changePassword(values);
-      toast.success("Password changed");
+      toast.success("비밀번호를 변경했습니다");
       closeDialog();
     } catch (caught) {
       setError(getErrorMessage(caught));
@@ -121,7 +121,7 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
     try {
       await removePassword(values);
       await refreshSession();
-      toast.success("Password removed");
+      toast.success("비밀번호를 제거했습니다");
       closeDialog();
     } catch (caught) {
       setError(getErrorMessage(caught));
@@ -137,7 +137,7 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
         return;
       }
       await refreshSession();
-      toast.success("Password session established");
+      toast.success("비밀번호 세션이 확인되었습니다");
       closeDialog();
     } catch (caught) {
       setError(getErrorMessage(caught));
@@ -149,7 +149,7 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
     try {
       await verifyTotp(values);
       await refreshSession();
-      toast.success("Password session established");
+      toast.success("비밀번호 세션이 확인되었습니다");
       closeDialog();
     } catch (caught) {
       setError(getErrorMessage(caught));
@@ -165,17 +165,17 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
             <KeyRound className="h-4 w-4 text-primary" aria-hidden="true" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold">Password</h3>
+            <h3 className="text-sm font-semibold">비밀번호</h3>
             <p className="text-xs text-muted-foreground">
               {!passwordManagementEnabled
-                ? "Password login is disabled by the current dashboard auth mode."
+                ? "현재 대시보드 인증 모드에서는 비밀번호 로그인이 비활성화되어 있습니다."
                 : authMode === "trusted_header"
                   ? passwordRequired
-                    ? "Password is configured as an optional fallback."
-                    : "No fallback password set."
+                    ? "비밀번호가 선택적 대체 로그인 수단으로 설정되어 있습니다."
+                    : "대체 비밀번호가 설정되어 있지 않습니다."
                   : passwordRequired
-                    ? "Password is configured."
-                    : "No password set."}
+                    ? "비밀번호가 설정되어 있습니다."
+                    : "비밀번호가 설정되어 있지 않습니다."}
             </p>
           </div>
         </div>
@@ -191,7 +191,7 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
                 disabled={lock}
                 onClick={() => setActiveDialog("change")}
               >
-                Change
+                변경
               </Button>
               <Button
                 type="button"
@@ -201,7 +201,7 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
                 disabled={lock}
                 onClick={() => setActiveDialog("remove")}
               >
-                Remove
+                제거
               </Button>
             </>
           ) : passwordRequired && authenticated && !passwordSessionActive ? (
@@ -213,7 +213,7 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
               disabled={disabled}
               onClick={() => setActiveDialog("verify")}
             >
-              Login to manage
+              로그인 후 관리
             </Button>
           ) : !passwordRequired ? (
             <Button
@@ -223,7 +223,7 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
               disabled={lock}
               onClick={() => setActiveDialog("setup")}
             >
-              Set password
+              비밀번호 설정
             </Button>
           ) : null}
         </div>
@@ -234,14 +234,14 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
       <Dialog open={activeDialog === "setup"} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Set password</DialogTitle>
-              <DialogDescription>Set a password for dashboard login.</DialogDescription>
+              <DialogTitle>비밀번호 설정</DialogTitle>
+              <DialogDescription>대시보드 로그인에 사용할 비밀번호를 설정합니다.</DialogDescription>
             </DialogHeader>
             {bootstrapRequired ? (
               <AlertMessage variant="error">
                 {bootstrapTokenConfigured
-                  ? "Remote setup requires the configured bootstrap token (from server logs or CODEX_LB_DASHBOARD_BOOTSTRAP_TOKEN)."
-                  : "Remote setup is blocked. Set CODEX_LB_DASHBOARD_BOOTSTRAP_TOKEN on the server or restart to auto-generate a token."}
+                  ? "원격 설정에는 구성된 bootstrap token이 필요합니다. 서버 로그 또는 CODEX_LB_DASHBOARD_BOOTSTRAP_TOKEN에서 확인하세요."
+                  : "원격 설정이 차단되어 있습니다. 서버에 CODEX_LB_DASHBOARD_BOOTSTRAP_TOKEN을 설정하거나 재시작해 토큰을 자동 생성하세요."}
               </AlertMessage>
             ) : null}
             {error ? <AlertMessage variant="error">{error}</AlertMessage> : null}
@@ -252,9 +252,9 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>비밀번호</FormLabel>
                     <FormControl>
-                      <Input {...field} type="password" autoComplete="new-password" placeholder="Min. 8 characters" />
+                      <Input {...field} type="password" autoComplete="new-password" placeholder="최소 8자" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -266,9 +266,9 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
                     name="bootstrapToken"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Bootstrap token</FormLabel>
+                        <FormLabel>부트스트랩 토큰</FormLabel>
                         <FormControl>
-                          <Input {...field} type="password" autoComplete="one-time-code" placeholder="Enter bootstrap token" />
+                          <Input {...field} type="password" autoComplete="one-time-code" placeholder="부트스트랩 토큰 입력" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -277,10 +277,10 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
                 ) : null}
                 <DialogFooter>
                 <Button type="button" variant="outline" onClick={closeDialog} disabled={busy}>
-                  Cancel
+                  취소
                 </Button>
                 <Button type="submit" disabled={lock}>
-                  Set password
+                  비밀번호 설정
                 </Button>
               </DialogFooter>
             </form>
@@ -292,8 +292,8 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
       <Dialog open={activeDialog === "change"} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Change password</DialogTitle>
-            <DialogDescription>Enter your current password and a new one.</DialogDescription>
+            <DialogTitle>비밀번호 변경</DialogTitle>
+            <DialogDescription>현재 비밀번호와 새 비밀번호를 입력하세요.</DialogDescription>
           </DialogHeader>
           {error ? <AlertMessage variant="error">{error}</AlertMessage> : null}
           <Form {...changeForm}>
@@ -303,7 +303,7 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
                 name="currentPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Current password</FormLabel>
+                    <FormLabel>현재 비밀번호</FormLabel>
                     <FormControl>
                       <Input {...field} type="password" autoComplete="current-password" />
                     </FormControl>
@@ -316,9 +316,9 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
                 name="newPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>New password</FormLabel>
+                    <FormLabel>새 비밀번호</FormLabel>
                     <FormControl>
-                      <Input {...field} type="password" autoComplete="new-password" placeholder="Min. 8 characters" />
+                      <Input {...field} type="password" autoComplete="new-password" placeholder="최소 8자" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -326,10 +326,10 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
               />
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={closeDialog} disabled={busy}>
-                  Cancel
+                  취소
                 </Button>
                 <Button type="submit" disabled={lock}>
-                  Change password
+                  비밀번호 변경
                 </Button>
               </DialogFooter>
             </form>
@@ -341,8 +341,8 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
       <Dialog open={activeDialog === "remove"} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Remove password</DialogTitle>
-            <DialogDescription>Confirm your current password to remove it.</DialogDescription>
+            <DialogTitle>비밀번호 제거</DialogTitle>
+            <DialogDescription>제거하려면 현재 비밀번호를 확인하세요.</DialogDescription>
           </DialogHeader>
           {error ? <AlertMessage variant="error">{error}</AlertMessage> : null}
           <Form {...removeForm}>
@@ -352,9 +352,9 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Current password</FormLabel>
+                    <FormLabel>현재 비밀번호</FormLabel>
                     <FormControl>
-                      <Input {...field} type="password" autoComplete="current-password" placeholder="Enter current password" />
+                      <Input {...field} type="password" autoComplete="current-password" placeholder="현재 비밀번호 입력" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -362,10 +362,10 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
               />
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={closeDialog} disabled={busy}>
-                  Cancel
+                  취소
                 </Button>
                 <Button type="submit" variant="destructive" disabled={lock}>
-                  Remove password
+                  비밀번호 제거
                 </Button>
               </DialogFooter>
             </form>
@@ -377,11 +377,11 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
       <Dialog open={activeDialog === "verify"} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{verifyStep === "password" ? "Verify password" : "TOTP verification"}</DialogTitle>
+            <DialogTitle>{verifyStep === "password" ? "비밀번호 확인" : "TOTP 확인"}</DialogTitle>
             <DialogDescription>
               {verifyStep === "password"
-                ? "Enter your password to unlock password and TOTP management."
-                : "Enter your TOTP code to complete verification."}
+                ? "비밀번호와 TOTP 관리 기능을 열려면 비밀번호를 입력하세요."
+                : "확인을 완료하려면 TOTP 코드를 입력하세요."}
             </DialogDescription>
           </DialogHeader>
           {error ? <AlertMessage variant="error">{error}</AlertMessage> : null}
@@ -393,9 +393,9 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <FormLabel>비밀번호</FormLabel>
                       <FormControl>
-                        <Input {...field} type="password" autoComplete="current-password" placeholder="Enter current password" />
+                        <Input {...field} type="password" autoComplete="current-password" placeholder="현재 비밀번호 입력" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -403,10 +403,10 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
                 />
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={closeDialog} disabled={busy}>
-                    Cancel
+                    취소
                   </Button>
                   <Button type="submit" disabled={busy}>
-                    Verify
+                    확인
                   </Button>
                 </DialogFooter>
               </form>
@@ -419,9 +419,9 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
                   name="code"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>TOTP code</FormLabel>
+                      <FormLabel>TOTP 코드</FormLabel>
                       <FormControl>
-                        <Input {...field} type="text" inputMode="numeric" autoComplete="one-time-code" placeholder="6-digit code" />
+                        <Input {...field} type="text" inputMode="numeric" autoComplete="one-time-code" placeholder="6자리 코드" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -429,10 +429,10 @@ export function PasswordSettings({ disabled = false }: PasswordSettingsProps) {
                 />
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={closeDialog} disabled={busy}>
-                    Cancel
+                    취소
                   </Button>
                   <Button type="submit" disabled={busy}>
-                    Verify
+                    확인
                   </Button>
                 </DialogFooter>
               </form>

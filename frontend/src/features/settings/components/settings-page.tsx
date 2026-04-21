@@ -7,7 +7,7 @@ import { ApiKeysSection } from "@/features/api-keys/components/api-keys-section"
 import { FirewallSection } from "@/features/firewall/components/firewall-section";
 import { buildSettingsUpdateRequest } from "@/features/settings/payload";
 import { AppearanceSettings } from "@/features/settings/components/appearance-settings";
-import { ImportSettings } from "@/features/settings/components/import-settings";
+import { BackupRestoreSettings } from "@/features/settings/components/backup-restore-settings";
 import { PasswordSettings } from "@/features/settings/components/password-settings";
 import { RoutingSettings } from "@/features/settings/components/routing-settings";
 import { SettingsSkeleton } from "@/features/settings/components/settings-skeleton";
@@ -22,14 +22,17 @@ const TotpSettings = lazy(() =>
 );
 
 export function SettingsPage() {
-  const { settingsQuery, updateSettingsMutation } = useSettings();
+  const { settingsQuery, updateSettingsMutation, downloadBackupMutation, restoreBackupMutation } = useSettings();
   const authMode = useAuthStore((state) => state.authMode);
   const passwordManagementEnabled = useAuthStore((state) => state.passwordManagementEnabled);
   const passwordSessionActive = useAuthStore((state) => state.passwordSessionActive);
 
   const settings = settingsQuery.data;
-  const busy = updateSettingsMutation.isPending;
+  const busy =
+    updateSettingsMutation.isPending || downloadBackupMutation.isPending || restoreBackupMutation.isPending;
   const error = getErrorMessageOrNull(settingsQuery.error) || getErrorMessageOrNull(updateSettingsMutation.error);
+  const backupError =
+    getErrorMessageOrNull(downloadBackupMutation.error) || getErrorMessageOrNull(restoreBackupMutation.error);
 
   const handleSave = async (payload: SettingsUpdateRequest) => {
     await updateSettingsMutation.mutateAsync(payload);
@@ -41,9 +44,9 @@ export function SettingsPage() {
       <div>
         <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
           <Settings className="h-5 w-5 text-primary" />
-          Settings
+          설정
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">Configure routing, auth, API key management, and firewall.</p>
+        <p className="mt-1 text-sm text-muted-foreground">라우팅, 인증, API 키 관리, 방화벽을 설정합니다.</p>
       </div>
 
       {!settings ? (
@@ -54,15 +57,13 @@ export function SettingsPage() {
 
           {authMode === "trusted_header" ? (
             <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs font-medium text-foreground">
-              Dashboard access is authenticated by a trusted reverse-proxy header. Password and TOTP stay
-              available only as optional fallback login.
+              대시보드 접근은 신뢰된 리버스 프록시 헤더로 인증됩니다. 비밀번호와 TOTP는 선택적 대체 로그인으로만 사용할 수 있습니다.
             </div>
           ) : null}
 
           {authMode === "disabled" ? (
             <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs font-medium text-foreground">
-              Dashboard auth is fully bypassed by configuration. Only use this mode behind network restrictions
-              or external access control.
+              설정에 따라 대시보드 인증이 완전히 우회됩니다. 이 모드는 네트워크 제한이나 외부 접근 제어 뒤에서만 사용하세요.
             </div>
           ) : null}
 
@@ -74,7 +75,19 @@ export function SettingsPage() {
               busy={busy}
               onSave={handleSave}
             />
-            <ImportSettings settings={settings} busy={busy} onSave={handleSave} />
+            <BackupRestoreSettings
+              busy={busy}
+              downloadBusy={downloadBackupMutation.isPending}
+              restoreBusy={restoreBackupMutation.isPending}
+              restoreResult={restoreBackupMutation.data}
+              error={backupError}
+              onDownload={async () => {
+                await downloadBackupMutation.mutateAsync();
+              }}
+              onRestore={async (file) => {
+                await restoreBackupMutation.mutateAsync(file);
+              }}
+            />
             <PasswordSettings disabled={busy} />
             {passwordManagementEnabled && passwordSessionActive ? (
               <Suspense fallback={null}>
@@ -93,7 +106,7 @@ export function SettingsPage() {
             <StickySessionsSection />
           </div>
 
-          <LoadingOverlay visible={!!settings && busy} label="Saving settings..." />
+          <LoadingOverlay visible={!!settings && busy} label="설정을 저장하는 중..." />
         </>
       )}
     </div>

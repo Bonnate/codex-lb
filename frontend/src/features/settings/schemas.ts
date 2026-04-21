@@ -26,5 +26,14 @@ export const SettingsUpdateRequestSchema = z.object({
   apiKeyAuthEnabled: z.boolean().optional(),
 });
 
+export const DashboardRestoreResponseSchema = z.object({
+  settingsApplied: z.boolean(),
+  accountsImported: z.number().int().nonnegative(),
+  accountsSkipped: z.number().int().nonnegative(),
+  apiKeysImported: z.number().int().nonnegative(),
+  apiKeysSkipped: z.number().int().nonnegative(),
+});
+
 export type DashboardSettings = z.infer<typeof DashboardSettingsSchema>;
 export type SettingsUpdateRequest = z.infer<typeof SettingsUpdateRequestSchema>;
+export type DashboardRestoreResponse = z.infer<typeof DashboardRestoreResponseSchema>;
