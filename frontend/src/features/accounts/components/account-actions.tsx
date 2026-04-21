@@ -1,4 +1,4 @@
-import { Download, Pause, Play, RefreshCw, Trash2 } from "lucide-react";
+import { Pause, Play, RefreshCw, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import type { AccountSummary } from "@/features/accounts/schemas";
@@ -8,7 +8,6 @@ export type AccountActionsProps = {
   busy: boolean;
   onPause: (accountId: string) => void;
   onResume: (accountId: string) => void;
-  onExport: (accountId: string) => void;
   onDelete: (accountId: string) => void;
   onReauth: () => void;
 };
@@ -18,7 +17,6 @@ export function AccountActions({
   busy,
   onPause,
   onResume,
-  onExport,
   onDelete,
   onReauth,
 }: AccountActionsProps) {
@@ -62,18 +60,6 @@ export function AccountActions({
           다시 인증
         </Button>
       ) : null}
-
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        className="h-8 gap-1.5 text-xs"
-        onClick={() => onExport(account.accountId)}
-        disabled={busy}
-      >
-        <Download className="h-3.5 w-3.5" />
-        내보내기
-      </Button>
 
       <Button
         type="button"

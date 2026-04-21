@@ -1,9 +1,9 @@
-import { del, get, getBlob, post, postBlob } from "@/lib/api-client";
+import { del, get, post, put } from "@/lib/api-client";
 
 import {
   AccountActionResponseSchema,
-  AccountBulkExportRequestSchema,
-  AccountImportResponseSchema,
+  AccountExpiryUpdateRequestSchema,
+  AccountExpiryUpdateResponseSchema,
   AccountsResponseSchema,
   AccountTrendsResponseSchema,
   ManualOauthCallbackRequestSchema,
@@ -23,27 +23,6 @@ export function listAccounts() {
   return get(ACCOUNTS_BASE_PATH, AccountsResponseSchema);
 }
 
-export function importAccounts(files: File[]) {
-  const formData = new FormData();
-  for (const file of files) {
-    formData.append("auth_json", file);
-  }
-  return post(`${ACCOUNTS_BASE_PATH}/import`, AccountImportResponseSchema, {
-    body: formData,
-  });
-}
-
-export function exportAccount(accountId: string) {
-  return getBlob(`${ACCOUNTS_BASE_PATH}/${encodeURIComponent(accountId)}/export`);
-}
-
-export function exportAccounts(accountIds: string[]) {
-  const validated = AccountBulkExportRequestSchema.parse({ accountIds });
-  return postBlob(`${ACCOUNTS_BASE_PATH}/export`, {
-    body: validated,
-  });
-}
-
 export function pauseAccount(accountId: string) {
   return post(
     `${ACCOUNTS_BASE_PATH}/${encodeURIComponent(accountId)}/pause`,
@@ -55,6 +34,17 @@ export function reactivateAccount(accountId: string) {
   return post(
     `${ACCOUNTS_BASE_PATH}/${encodeURIComponent(accountId)}/reactivate`,
     AccountActionResponseSchema,
+  );
+}
+
+export function updateAccountExpiry(accountId: string, payload: unknown) {
+  const validated = AccountExpiryUpdateRequestSchema.parse(payload);
+  return put(
+    `${ACCOUNTS_BASE_PATH}/${encodeURIComponent(accountId)}/expiry`,
+    AccountExpiryUpdateResponseSchema,
+    {
+      body: validated,
+    },
   );
 }
 

@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -8,7 +8,6 @@ import { useDialogState } from "@/hooks/use-dialog-state";
 import { AccountDetail } from "@/features/accounts/components/account-detail";
 import { AccountList } from "@/features/accounts/components/account-list";
 import { AccountsSkeleton } from "@/features/accounts/components/accounts-skeleton";
-import { ImportDialog } from "@/features/accounts/components/import-dialog";
 import { useAccounts } from "@/features/accounts/hooks/use-accounts";
 import { useOauth } from "@/features/accounts/hooks/use-oauth";
 import { buildDuplicateAccountIdSet } from "@/utils/account-identifiers";
@@ -22,29 +21,19 @@ export function AccountsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const {
     accountsQuery,
-    importMutation,
-    exportMutation,
-    bulkExportMutation,
     pauseMutation,
     resumeMutation,
     deleteMutation,
+    expiryMutation,
   } = useAccounts();
   const oauth = useOauth();
 
-  const importDialog = useDialogState();
   const oauthDialog = useDialogState();
   const deleteDialog = useDialogState<string>();
-  const [exportSelectedAccountIds, setExportSelectedAccountIds] = useState<string[]>([]);
 
   const accounts = useMemo(() => accountsQuery.data ?? [], [accountsQuery.data]);
   const duplicateAccountIds = useMemo(() => buildDuplicateAccountIdSet(accounts), [accounts]);
   const selectedAccountId = searchParams.get("selected");
-
-  useEffect(() => {
-    setExportSelectedAccountIds((current) =>
-      current.filter((accountId) => accounts.some((account) => account.accountId === accountId)),
-    );
-  }, [accounts]);
 
   const handleSelectAccount = useCallback((accountId: string) => {
     const nextSearchParams = new URLSearchParams(searchParams);
@@ -70,47 +59,17 @@ export function AccountsPage() {
     [accounts, resolvedSelectedAccountId],
   );
 
-  const handleToggleExportSelection = useCallback((accountId: string, selected: boolean) => {
-    setExportSelectedAccountIds((current) => {
-      const next = new Set(current);
-      if (selected) {
-        next.add(accountId);
-      } else {
-        next.delete(accountId);
-      }
-      return [...next];
-    });
-  }, []);
-
-  const handleSetAllExportSelection = useCallback((accountIds: string[], selected: boolean) => {
-    setExportSelectedAccountIds((current) => {
-      const next = new Set(current);
-      for (const accountId of accountIds) {
-        if (selected) {
-          next.add(accountId);
-        } else {
-          next.delete(accountId);
-        }
-      }
-      return [...next];
-    });
-  }, []);
-
   const mutationBusy =
-    importMutation.isPending ||
-    exportMutation.isPending ||
-    bulkExportMutation.isPending ||
     pauseMutation.isPending ||
     resumeMutation.isPending ||
-    deleteMutation.isPending;
+    deleteMutation.isPending ||
+    expiryMutation.isPending;
 
   const mutationError =
-    getErrorMessageOrNull(importMutation.error) ||
-    getErrorMessageOrNull(exportMutation.error) ||
-    getErrorMessageOrNull(bulkExportMutation.error) ||
     getErrorMessageOrNull(pauseMutation.error) ||
     getErrorMessageOrNull(resumeMutation.error) ||
-    getErrorMessageOrNull(deleteMutation.error);
+    getErrorMessageOrNull(deleteMutation.error) ||
+    getErrorMessageOrNull(expiryMutation.error);
 
   return (
     <div className="animate-fade-in-up space-y-6">
@@ -132,12 +91,7 @@ export function AccountsPage() {
             <AccountList
               accounts={accounts}
               selectedAccountId={resolvedSelectedAccountId}
-              exportSelectedAccountIds={exportSelectedAccountIds}
               onSelect={handleSelectAccount}
-              onToggleExportSelection={handleToggleExportSelection}
-              onSetAllExportSelection={handleSetAllExportSelection}
-              onExportSelected={() => void bulkExportMutation.mutateAsync(exportSelectedAccountIds)}
-              onOpenImport={() => importDialog.show()}
               onOpenOauth={() => oauthDialog.show()}
             />
           </div>
@@ -148,22 +102,12 @@ export function AccountsPage() {
             busy={mutationBusy}
             onPause={(accountId) => void pauseMutation.mutateAsync(accountId)}
             onResume={(accountId) => void resumeMutation.mutateAsync(accountId)}
-            onExport={(accountId) => void exportMutation.mutateAsync(accountId)}
             onDelete={(accountId) => deleteDialog.show(accountId)}
+            onUpdateExpiry={(accountId, expiresOn) => void expiryMutation.mutateAsync({ accountId, expiresOn })}
             onReauth={() => oauthDialog.show()}
           />
         </div>
       )}
-
-      <ImportDialog
-        open={importDialog.open}
-        busy={importMutation.isPending}
-        error={getErrorMessageOrNull(importMutation.error)}
-        onOpenChange={importDialog.onOpenChange}
-        onImport={async (files) => {
-          await importMutation.mutateAsync(files);
-        }}
-      />
 
       <Suspense fallback={null}>
         <OauthDialog

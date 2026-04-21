@@ -35,7 +35,7 @@ async def _import_account(async_client, email: str, raw_account_id: str) -> str:
         },
     }
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
     return generate_unique_account_id(raw_account_id, email)
 

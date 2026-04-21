@@ -2,15 +2,12 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { AccountList } from "@/features/accounts/components/account-list";
+import { AccountList, compareAccountsByExpiry } from "@/features/accounts/components/account-list";
 
 describe("AccountList", () => {
   it("renders items and filters by search", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
-    const onToggleExportSelection = vi.fn();
-    const onSetAllExportSelection = vi.fn();
-    const onExportSelected = vi.fn();
 
     render(
       <AccountList
@@ -33,12 +30,7 @@ describe("AccountList", () => {
           },
         ]}
         selectedAccountId="acc-1"
-        exportSelectedAccountIds={[]}
         onSelect={onSelect}
-        onToggleExportSelection={onToggleExportSelection}
-        onSetAllExportSelection={onSetAllExportSelection}
-        onExportSelected={onExportSelected}
-        onOpenImport={() => {}}
         onOpenOauth={() => {}}
       />,
     );
@@ -70,12 +62,7 @@ describe("AccountList", () => {
           },
         ]}
         selectedAccountId={null}
-        exportSelectedAccountIds={[]}
         onSelect={() => {}}
-        onToggleExportSelection={() => {}}
-        onSetAllExportSelection={() => {}}
-        onExportSelected={() => {}}
-        onOpenImport={() => {}}
         onOpenOauth={() => {}}
       />,
     );
@@ -114,50 +101,63 @@ describe("AccountList", () => {
           },
         ]}
         selectedAccountId={null}
-        exportSelectedAccountIds={[]}
         onSelect={() => {}}
-        onToggleExportSelection={() => {}}
-        onSetAllExportSelection={() => {}}
-        onExportSelected={() => {}}
-        onOpenImport={() => {}}
         onOpenOauth={() => {}}
       />,
     );
 
-    expect(screen.getByText((_content, el) => el?.tagName === "P" && !!el.textContent?.match(/dup@example\.com \| ID d48f0bfc\.\.\.12b5d5/))).toBeInTheDocument();
-    expect(screen.getByText((_content, el) => el?.tagName === "P" && !!el.textContent?.match(/dup@example\.com \| ID 7f9de2ad\.\.\.a95cee/))).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        (_content, el) =>
+          el?.tagName === "P" && !!el.textContent?.match(/dup@example\.com \| ID d48f0bfc\.\.\.12b5d5/),
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        (_content, el) =>
+          el?.tagName === "P" && !!el.textContent?.match(/dup@example\.com \| ID 7f9de2ad\.\.\.a95cee/),
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText("unique@example.com")).toBeInTheDocument();
-    expect(screen.queryByText((_content, el) => el?.tagName === "P" && !!el.textContent?.match(/unique@example\.com \| ID/))).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        (_content, el) => el?.tagName === "P" && !!el.textContent?.match(/unique@example\.com \| ID/),
+      ),
+    ).not.toBeInTheDocument();
   });
 
-  it("exports selected accounts from the toolbar", async () => {
-    const user = userEvent.setup();
-    const onExportSelected = vi.fn();
+  it("compares accounts by expiry date with undated accounts last", () => {
+    const early = {
+      accountId: "acc-1",
+      email: "early@example.com",
+      displayName: "Early",
+      planType: "plus",
+      status: "active",
+      expiresOn: "2026-05-01",
+      additionalQuotas: [],
+    };
+    const late = {
+      accountId: "acc-2",
+      email: "late@example.com",
+      displayName: "Late",
+      planType: "plus",
+      status: "active",
+      expiresOn: "2026-06-01",
+      additionalQuotas: [],
+    };
+    const none = {
+      accountId: "acc-3",
+      email: "none@example.com",
+      displayName: "None",
+      planType: "plus",
+      status: "active",
+      expiresOn: null,
+      additionalQuotas: [],
+    };
 
-    render(
-      <AccountList
-        accounts={[
-          {
-            accountId: "acc-1",
-            email: "primary@example.com",
-            displayName: "Primary",
-            planType: "plus",
-            status: "active",
-            additionalQuotas: [],
-          },
-        ]}
-        selectedAccountId="acc-1"
-        exportSelectedAccountIds={["acc-1"]}
-        onSelect={() => {}}
-        onToggleExportSelection={() => {}}
-        onSetAllExportSelection={() => {}}
-        onExportSelected={onExportSelected}
-        onOpenImport={() => {}}
-        onOpenOauth={() => {}}
-      />,
-    );
-
-    await user.click(screen.getByRole("button", { name: "선택 내보내기" }));
-    expect(onExportSelected).toHaveBeenCalledTimes(1);
+    expect(compareAccountsByExpiry(early, late, "expiry_asc")).toBeLessThan(0);
+    expect(compareAccountsByExpiry(late, early, "expiry_desc")).toBeLessThan(0);
+    expect(compareAccountsByExpiry(early, none, "expiry_asc")).toBeLessThan(0);
+    expect(compareAccountsByExpiry(none, early, "expiry_asc")).toBeGreaterThan(0);
   });
 });

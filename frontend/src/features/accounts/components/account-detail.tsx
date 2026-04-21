@@ -3,6 +3,7 @@ import { User } from "lucide-react";
 import { isEmailLabel } from "@/components/blur-email";
 import { usePrivacyStore } from "@/hooks/use-privacy";
 import { AccountActions } from "@/features/accounts/components/account-actions";
+import { AccountExpiryCard } from "@/features/accounts/components/account-expiry-card";
 import { AccountTokenInfo } from "@/features/accounts/components/account-token-info";
 import { AccountUsagePanel } from "@/features/accounts/components/account-usage-panel";
 import type { AccountSummary } from "@/features/accounts/schemas";
@@ -15,8 +16,8 @@ export type AccountDetailProps = {
   busy: boolean;
   onPause: (accountId: string) => void;
   onResume: (accountId: string) => void;
-  onExport: (accountId: string) => void;
   onDelete: (accountId: string) => void;
+  onUpdateExpiry: (accountId: string, expiresOn: string | null) => void;
   onReauth: () => void;
 };
 
@@ -26,8 +27,8 @@ export function AccountDetail({
   busy,
   onPause,
   onResume,
-  onExport,
   onDelete,
+  onUpdateExpiry,
   onReauth,
 }: AccountDetailProps) {
   const { data: trends } = useAccountTrends(account?.accountId ?? null);
@@ -69,12 +70,12 @@ export function AccountDetail({
 
       <AccountUsagePanel account={account} trends={trends} />
       <AccountTokenInfo account={account} />
+      <AccountExpiryCard account={account} busy={busy} onSave={onUpdateExpiry} />
       <AccountActions
         account={account}
         busy={busy}
         onPause={onPause}
         onResume={onResume}
-        onExport={onExport}
         onDelete={onDelete}
         onReauth={onReauth}
       />

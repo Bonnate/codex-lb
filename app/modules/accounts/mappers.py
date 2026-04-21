@@ -116,6 +116,7 @@ def _account_to_summary(
         request_usage=request_usage,
         additional_quotas=additional_quotas or [],
         deactivation_reason=account.deactivation_reason,
+        expires_on=account.expires_on,
         auth=auth_status,
     )
 

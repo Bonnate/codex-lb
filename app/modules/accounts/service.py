@@ -4,6 +4,7 @@ import io
 import json
 import zipfile
 from dataclasses import dataclass
+from datetime import date
 from datetime import timedelta
 from datetime import timezone
 from typing import cast
@@ -313,6 +314,12 @@ class AccountsService:
 
     async def pause_account(self, account_id: str) -> bool:
         result = await self._repo.update_status(account_id, AccountStatus.PAUSED, None, None, blocked_at=None)
+        if result:
+            get_account_selection_cache().invalidate()
+        return result
+
+    async def update_account_expiration(self, account_id: str, expires_on: date | None) -> bool:
+        result = await self._repo.update_expiration(account_id, expires_on)
         if result:
             get_account_selection_cache().invalidate()
         return result

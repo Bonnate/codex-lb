@@ -1,4 +1,3 @@
-import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { isEmailLabel } from "@/components/blur-email";
 import { usePrivacyStore } from "@/hooks/use-privacy";
@@ -11,10 +10,8 @@ import { formatSlug } from "@/utils/formatters";
 export type AccountListItemProps = {
   account: AccountSummary;
   selected: boolean;
-  exportSelected?: boolean;
   showAccountId?: boolean;
   onSelect: (accountId: string) => void;
-  onToggleExportSelection?: (accountId: string, selected: boolean) => void;
 };
 
 function MiniQuotaBar({ percent }: { percent: number | null }) {
@@ -36,10 +33,8 @@ function MiniQuotaBar({ percent }: { percent: number | null }) {
 export function AccountListItem({
   account,
   selected,
-  exportSelected = false,
   showAccountId = false,
   onSelect,
-  onToggleExportSelection,
 }: AccountListItemProps) {
   const blurred = usePrivacyStore((s) => s.blurred);
   const status = normalizeStatus(account.status);
@@ -50,40 +45,46 @@ export function AccountListItem({
     : null;
   const baseSubtitle = emailSubtitle ?? formatSlug(account.planType);
   const idSuffix = showAccountId ? ` | ID ${formatCompactAccountId(account.accountId)}` : "";
+  const expirySuffix = account.expiresOn ? ` | 만료 ${account.expiresOn}` : "";
   const secondary = account.usage?.secondaryRemainingPercent ?? null;
 
   return (
-    <div className="flex items-center gap-2">
-      <Checkbox
-        aria-label={`${account.accountId} 내보내기 선택`}
-        checked={exportSelected}
-        onCheckedChange={(checked) => onToggleExportSelection?.(account.accountId, checked === true)}
-      />
-      <button
-        type="button"
-        onClick={() => onSelect(account.accountId)}
-        className={cn(
-          "w-full rounded-lg px-3 py-2.5 text-left transition-colors",
-          selected
-            ? "bg-primary/8 ring-1 ring-primary/25"
-            : "hover:bg-muted/50",
-        )}
-      >
-        <div className="flex items-center gap-2.5">
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">
-              {titleIsEmail && blurred ? <span className="privacy-blur">{title}</span> : title}
-            </p>
-            <p className="truncate text-xs text-muted-foreground" title={showAccountId ? `계정 ID ${account.accountId}` : undefined}>
-              {emailSubtitle ? <><span className={blurred ? "privacy-blur" : undefined}>{emailSubtitle}</span>{idSuffix}</> : <>{baseSubtitle}{idSuffix}</>}
-            </p>
-          </div>
-          <StatusBadge status={status} />
+    <button
+      type="button"
+      onClick={() => onSelect(account.accountId)}
+      className={cn(
+        "w-full rounded-lg px-3 py-2.5 text-left transition-colors",
+        selected
+          ? "bg-primary/8 ring-1 ring-primary/25"
+          : "hover:bg-muted/50",
+      )}
+    >
+      <div className="flex items-center gap-2.5">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium">
+            {titleIsEmail && blurred ? <span className="privacy-blur">{title}</span> : title}
+          </p>
+          <p className="truncate text-xs text-muted-foreground" title={showAccountId ? `계정 ID ${account.accountId}` : undefined}>
+            {emailSubtitle ? (
+              <>
+                <span className={blurred ? "privacy-blur" : undefined}>{emailSubtitle}</span>
+                {idSuffix}
+                {expirySuffix}
+              </>
+            ) : (
+              <>
+                {baseSubtitle}
+                {idSuffix}
+                {expirySuffix}
+              </>
+            )}
+          </p>
         </div>
-        <div className="mt-1.5">
-          <MiniQuotaBar percent={secondary} />
-        </div>
-      </button>
-    </div>
+        <StatusBadge status={status} />
+      </div>
+      <div className="mt-1.5">
+        <MiniQuotaBar percent={secondary} />
+      </div>
+    </button>
   );
 }

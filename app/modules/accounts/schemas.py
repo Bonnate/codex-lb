@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import List
 
 from pydantic import Field
@@ -75,6 +75,7 @@ class AccountSummary(DashboardModel):
     request_usage: AccountRequestUsage | None = None
     additional_quotas: list[AccountAdditionalQuota] = Field(default_factory=list)
     deactivation_reason: str | None = None
+    expires_on: date | None = None
     auth: AccountAuthStatus | None = None
 
 
@@ -108,6 +109,15 @@ class AccountReactivateResponse(DashboardModel):
 
 class AccountDeleteResponse(DashboardModel):
     status: str
+
+
+class AccountExpiryUpdateRequest(DashboardModel):
+    expires_on: date | None = None
+
+
+class AccountExpiryUpdateResponse(DashboardModel):
+    status: str
+    expires_on: date | None = None
 
 
 class AccountTrendsResponse(DashboardModel):

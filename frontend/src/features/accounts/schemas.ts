@@ -54,6 +54,7 @@ export const AccountSummarySchema = z.object({
   displayName: z.string(),
   planType: z.string(),
   status: z.string(),
+  expiresOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   usage: AccountUsageSchema.nullable().optional(),
   resetAtPrimary: z.string().datetime({ offset: true }).nullable().optional(),
   resetAtSecondary: z.string().datetime({ offset: true }).nullable().optional(),
@@ -92,6 +93,15 @@ export const AccountBulkExportRequestSchema = z.object({
 
 export const AccountActionResponseSchema = z.object({
   status: z.string(),
+});
+
+export const AccountExpiryUpdateRequestSchema = z.object({
+  expiresOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+});
+
+export const AccountExpiryUpdateResponseSchema = z.object({
+  status: z.string(),
+  expiresOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
 });
 
 export const OauthStartRequestSchema = z.object({
@@ -162,6 +172,8 @@ export type AccountAdditionalQuota = z.infer<typeof AccountAdditionalQuotaSchema
 export type AccountTrendsResponse = z.infer<typeof AccountTrendsResponseSchema>;
 export type ImportedAccount = z.infer<typeof ImportedAccountSchema>;
 export type AccountBulkExportRequest = z.infer<typeof AccountBulkExportRequestSchema>;
+export type AccountExpiryUpdateRequest = z.infer<typeof AccountExpiryUpdateRequestSchema>;
+export type AccountExpiryUpdateResponse = z.infer<typeof AccountExpiryUpdateResponseSchema>;
 export type OauthStartResponse = z.infer<typeof OauthStartResponseSchema>;
 export type OauthStatusResponse = z.infer<typeof OauthStatusResponseSchema>;
 export type ManualOauthCallbackResponse = z.infer<typeof ManualOauthCallbackResponseSchema>;

@@ -33,22 +33,30 @@ describe("AccountListItem", () => {
     expect(screen.getByTestId("mini-quota-fill")).toHaveStyle({ width: "73%" });
   });
 
-  it("toggles bulk export selection", async () => {
+  it("selects the account when clicked", async () => {
     const user = userEvent.setup();
     const account = createAccountSummary();
-    const onToggleExportSelection = vi.fn();
+    const onSelect = vi.fn();
 
     render(
       <AccountListItem
         account={account}
         selected={false}
-        exportSelected={false}
-        onSelect={vi.fn()}
-        onToggleExportSelection={onToggleExportSelection}
+        onSelect={onSelect}
       />,
     );
 
-    await user.click(screen.getByRole("checkbox", { name: `${account.accountId} 내보내기 선택` }));
-    expect(onToggleExportSelection).toHaveBeenCalledWith(account.accountId, true);
+    await user.click(screen.getByRole("button"));
+    expect(onSelect).toHaveBeenCalledWith(account.accountId);
+  });
+
+  it("shows the configured expiry date", () => {
+    const account = createAccountSummary({
+      expiresOn: "2026-05-01",
+    });
+
+    render(<AccountListItem account={account} selected={false} onSelect={vi.fn()} />);
+
+    expect(screen.getByText(/만료 2026-05-01/)).toBeInTheDocument();
   });
 });

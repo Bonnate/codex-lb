@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import delete, func, select, text, update
 from sqlalchemy.exc import OperationalError
@@ -163,6 +163,20 @@ class AccountsRepository:
         await self._session.commit()
         return result.scalar_one_or_none() is not None
 
+    async def update_expiration(
+        self,
+        account_id: str,
+        expires_on: date | None,
+    ) -> bool:
+        result = await self._session.execute(
+            update(Account)
+            .where(Account.id == account_id)
+            .values(expires_on=expires_on)
+            .returning(Account.id)
+        )
+        await self._session.commit()
+        return result.scalar_one_or_none() is not None
+
     async def update_status_if_current(
         self,
         account_id: str,
@@ -310,6 +324,7 @@ def _apply_account_updates(target: Account, source: Account) -> None:
     target.deactivation_reason = source.deactivation_reason
     target.reset_at = source.reset_at
     target.blocked_at = source.blocked_at
+    target.expires_on = source.expires_on
 
 
 def _advisory_lock_key(scope: str, value: str) -> int:

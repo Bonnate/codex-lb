@@ -141,7 +141,7 @@ export function AccountUsagePanel({ account, trends }: AccountUsagePanelProps) {
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">요청 로그 합계</p>
         {hasRequestUsage ? (
           <p className="mt-1 text-xs tabular-nums text-muted-foreground">
-            {formatCompactNumber(requestUsage?.totalTokens)} tok | {formatCompactNumber(requestUsage?.cachedInputTokens)} cached |{" "}
+            {formatCompactNumber(requestUsage?.totalTokens)} 토큰 | {formatCompactNumber(requestUsage?.cachedInputTokens)} 캐시됨 |{" "}
             {formatCompactNumber(requestUsage?.requestCount)}건 | {formatCurrency(requestUsage?.totalCostUsd)}
           </p>
         ) : (

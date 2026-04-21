@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 
 from sqlalchemy import (
     BigInteger,
     Boolean,
     DateTime,
+    Date,
     Float,
     ForeignKey,
     Index,
@@ -76,6 +77,7 @@ class Account(Base):
     deactivation_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     reset_at: Mapped[int | None] = mapped_column(Integer, nullable=True)
     blocked_at: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    expires_on: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     api_key_assignments: Mapped[list["ApiKeyAccountAssignment"]] = relationship(
         "ApiKeyAccountAssignment",
