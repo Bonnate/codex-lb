@@ -114,7 +114,7 @@ async def test_proxy_responses_stream_surfaces_additional_quota_data_unavailable
     raw_account_id = "acc_gated_unavailable"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     payload = {"model": "gpt-5.3-codex-spark", "instructions": "hi", "input": [], "stream": True}
@@ -242,7 +242,7 @@ async def test_proxy_responses_streams_upstream(async_client, monkeypatch):
     raw_account_id = "acc_live"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     expected_account_id = generate_unique_account_id(raw_account_id, email)
@@ -292,7 +292,7 @@ async def test_proxy_responses_forwards_native_codex_headers(async_client, monke
     raw_account_id = "acc_stream_headers"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     seen_headers: dict[str, str] = {}
@@ -335,7 +335,7 @@ async def test_v1_responses_stream_preserves_done_text_events(async_client, monk
     raw_account_id = "acc_done_filter"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     async def fake_stream(payload, headers, access_token, account_id, base_url=None, raise_for_status=False, **_kw):
@@ -376,7 +376,7 @@ async def test_v1_responses_stream_keeps_non_text_content_part_done_events(async
     raw_account_id = "acc_done_filter_non_text"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     async def fake_stream(payload, headers, access_token, account_id, base_url=None, raise_for_status=False, **_kw):
@@ -415,7 +415,7 @@ async def test_backend_responses_stream_preserves_done_text_events(async_client,
     raw_account_id = "acc_done_preserve"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     async def fake_stream(payload, headers, access_token, account_id, base_url=None, raise_for_status=False, **_kw):
@@ -459,7 +459,7 @@ async def test_v1_responses_sanitizes_interleaved_reasoning_fields(async_client,
     raw_account_id = "acc_reasoning_sanitize"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     seen_input: dict[str, object] = {}
@@ -510,7 +510,7 @@ async def test_proxy_responses_forces_stream(async_client, monkeypatch):
     raw_account_id = "acc_stream_force"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     observed_stream: dict[str, bool | None] = {"value": None}
@@ -538,7 +538,7 @@ async def test_proxy_responses_accepts_builtin_tools(async_client, monkeypatch, 
     raw_account_id = "acc_tools"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     seen: dict[str, object] = {}
@@ -575,7 +575,7 @@ async def test_v1_responses_streams_event_sequence(async_client, monkeypatch):
     raw_account_id = "acc_stream_seq"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     async def fake_stream(payload, headers, access_token, account_id, base_url=None, raise_for_status=False, **_kw):
@@ -603,7 +603,7 @@ async def test_proxy_responses_stream_large_event_line(async_client, monkeypatch
     raw_account_id = "acc_stream_large"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     async def fake_stream(payload, headers, access_token, account_id, base_url=None, raise_for_status=False, **_kw):
@@ -635,7 +635,7 @@ async def test_v1_responses_non_streaming_returns_response(async_client, monkeyp
     raw_account_id = "acc_responses_nonstream"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     observed_stream: dict[str, bool | None] = {"value": None}
@@ -666,7 +666,7 @@ async def test_v1_responses_non_streaming_reconstructs_reasoning_output(async_cl
     raw_account_id = "acc_responses_reasoning_output"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     async def fake_stream(payload, headers, access_token, account_id, base_url=None, raise_for_status=False, **_kw):
@@ -704,7 +704,7 @@ async def test_v1_responses_non_streaming_preserves_sse_error_payload(async_clie
     raw_account_id = "acc_responses_error_event"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     async def fake_stream(payload, headers, access_token, account_id, base_url=None, raise_for_status=False, **_kw):
@@ -731,7 +731,7 @@ async def test_v1_responses_non_streaming_failed_without_status_returns_error(as
     raw_account_id = "acc_responses_error_no_status"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     async def fake_stream(payload, headers, access_token, account_id, base_url=None, raise_for_status=False, **_kw):
@@ -820,7 +820,7 @@ async def test_v1_responses_normalizes_assistant_input_text(async_client, monkey
     raw_account_id = "acc_assistant_normalize"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     seen_input: dict[str, object] = {}
@@ -857,7 +857,7 @@ async def test_v1_responses_normalizes_tool_messages(async_client, monkeypatch):
     raw_account_id = "acc_tool_normalize"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     seen_input: dict[str, object] = {}

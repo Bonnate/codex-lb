@@ -107,7 +107,7 @@ async def test_proxy_compact_surfaces_no_additional_quota_eligible_accounts(asyn
     raw_account_id = "acc_compact_gated"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     expected_account_id = generate_unique_account_id(raw_account_id, email)
@@ -149,7 +149,7 @@ async def test_proxy_compact_success(async_client, monkeypatch):
     raw_account_id = "acc_compact"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     expected_account_id = generate_unique_account_id(raw_account_id, email)
@@ -195,7 +195,7 @@ async def test_proxy_compact_success_preserves_compaction_payload(async_client, 
     raw_account_id = "acc_compact_pass_through"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     session = _JsonSession(
@@ -234,7 +234,7 @@ async def test_proxy_compact_headers_normalize_weekly_only_with_stale_secondary(
     raw_account_id = "acc_compact_weekly"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     expected_account_id = generate_unique_account_id(raw_account_id, email)
@@ -281,7 +281,7 @@ async def test_proxy_compact_usage_limit_marks_account(async_client, monkeypatch
     raw_account_id = "acc_limit"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     expected_account_id = generate_unique_account_id(raw_account_id, email)
@@ -319,7 +319,7 @@ async def test_proxy_compact_retry_uses_refreshed_account_id(async_client, monke
     raw_account_id = "acc_compact_retry_old"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     captured_account_ids: list[str | None] = []
@@ -354,7 +354,7 @@ async def test_proxy_compact_retryable_transport_failure_retries_same_contract_o
     raw_account_id = "acc_compact_safe_retry"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     compact_calls: list[str | None] = []
@@ -399,7 +399,7 @@ async def test_proxy_compact_output_round_trips_into_followup_responses_without_
     raw_account_id = "acc_compact_round_trip"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     compact_window = {

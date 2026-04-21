@@ -49,7 +49,7 @@ async def test_openai_client_responses_create(app_instance, monkeypatch):
     async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as admin_client:
         auth_json = _make_auth_json("acc_openai_resp", "openai-resp@example.com")
         files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-        response = await admin_client.post("/api/accounts/import", files=files)
+        response = await admin_client.post("/api/settings/restore", files=files)
         assert response.status_code == 200
 
     async with httpx.AsyncClient(transport=transport, base_url="http://testserver/v1") as http_client:
@@ -72,7 +72,7 @@ async def test_openai_client_chat_completions_create(app_instance, monkeypatch):
     async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as admin_client:
         auth_json = _make_auth_json("acc_openai_chat", "openai-chat@example.com")
         files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-        response = await admin_client.post("/api/accounts/import", files=files)
+        response = await admin_client.post("/api/settings/restore", files=files)
         assert response.status_code == 200
 
     async with httpx.AsyncClient(transport=transport, base_url="http://testserver/v1") as http_client:

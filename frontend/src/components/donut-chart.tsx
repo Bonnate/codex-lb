@@ -212,13 +212,13 @@ export function DonutChart({ items, total, centerValue, title, subtitle, safeLin
           ) : null}
           <div className="absolute inset-[22px] flex items-center justify-center rounded-full text-center pointer-events-none">
              <div>
-               <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Remaining</p>
+               <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">남은 용량</p>
                <p className="text-base font-semibold tabular-nums">{formatCompactNumber(displayTotal)}</p>
             </div>
           </div>
           </div>
           <p className="text-[11px] tabular-nums text-muted-foreground" data-testid="donut-caption">
-            Total {formatCompactNumber(safeCapacity)} · {formatUsedPercent(usedPercent)} used
+            전체 {formatCompactNumber(safeCapacity)} · {formatUsedPercent(usedPercent)} 사용됨
           </p>
         </div>
 
@@ -285,7 +285,7 @@ export function DonutChart({ items, total, centerValue, title, subtitle, safeLin
                 className="h-2.5 w-2.5 shrink-0 rounded-full"
                 style={{ backgroundColor: consumedColor }}
               />
-              <span className="truncate font-medium">Used</span>
+              <span className="truncate font-medium">사용됨</span>
             </div>
             <span className="tabular-nums text-muted-foreground" data-testid="donut-used-value">
               {formatCompactNumber(consumed)}

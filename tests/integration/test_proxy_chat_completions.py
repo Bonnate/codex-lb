@@ -38,7 +38,7 @@ async def test_v1_chat_completions_stream(async_client, monkeypatch):
     raw_account_id = "acc_chatstream"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     async def fake_stream(payload, headers, access_token, account_id, base_url=None, raise_for_status=False):
@@ -61,7 +61,7 @@ async def test_v1_chat_completions_non_stream_forces_stream(async_client, monkey
     raw_account_id = "acc_chatnonstr"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     observed_stream: dict[str, bool | None] = {"value": None}
@@ -88,7 +88,7 @@ async def test_v1_chat_completions_non_stream_deduplicates_tool_call_snapshots(a
     raw_account_id = "acc_chat_tool_snapshot"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     async def fake_stream(payload, headers, access_token, account_id, base_url=None, raise_for_status=False):
@@ -136,7 +136,7 @@ async def test_v1_chat_completions_stream_deduplicates_tool_call_snapshots(async
     raw_account_id = "acc_chat_tool_stream"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     async def fake_stream(payload, headers, access_token, account_id, base_url=None, raise_for_status=False):
@@ -202,7 +202,7 @@ async def test_v1_chat_completions_stream_skips_incompatible_snapshot_rewrites(
     raw_account_id = "acc_chat_tool_stream_rewrite"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     async def fake_stream(payload, headers, access_token, account_id, base_url=None, raise_for_status=False):
@@ -261,7 +261,7 @@ async def test_v1_chat_completions_stream_preserves_tool_call_delta_before_failu
     raw_account_id = "acc_chat_tool_stream_failed"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     async def fake_stream(payload, headers, access_token, account_id, base_url=None, raise_for_status=False):
@@ -320,7 +320,7 @@ async def test_v1_chat_completions_stream_include_usage(async_client, monkeypatc
     raw_account_id = "acc_chatusage"
     auth_json = _make_auth_json(raw_account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
 
     async def fake_stream(payload, headers, access_token, account_id, base_url=None, raise_for_status=False):

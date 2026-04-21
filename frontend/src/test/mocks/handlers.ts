@@ -38,6 +38,12 @@ const OauthStartPayloadSchema = z
 	})
 	.passthrough();
 
+const AccountExpiryUpdatePayloadSchema = z
+	.object({
+		expiresOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+	})
+	.passthrough();
+
 const ApiKeyCreatePayloadSchema = z
 	.object({
 		name: z.string().optional(),
@@ -315,90 +321,6 @@ export const handlers = [
 		return HttpResponse.json({ accounts: state.accounts });
 	}),
 
-	http.post("/api/accounts/import", async ({ request }) => {
-		const rawBody = await request.text();
-		const uploadedFiles = rawBody.match(/name="auth_json"/g) ?? ["auth_json"];
-		const importedAccounts = uploadedFiles.map((_, index) => {
-			const sequence = state.accounts.length + index + 1;
-			return createAccountSummary({
-				accountId: `acc_imported_${sequence}`,
-				email: `imported-${sequence}@example.com`,
-				displayName: `imported-${sequence}@example.com`,
-				status: "active",
-			});
-		});
-		state.accounts = [...state.accounts, ...importedAccounts];
-		return HttpResponse.json({
-			accounts: importedAccounts.map((created) => ({
-				accountId: created.accountId,
-				email: created.email,
-				planType: created.planType,
-				status: created.status,
-			})),
-			skippedCount: 0,
-		});
-	}),
-
-	http.post("/api/accounts/export", async ({ request }) => {
-		const payload = await parseJsonBody(
-			request,
-			z.object({ accountIds: z.array(z.string()).min(1) }),
-		);
-		if (!payload) {
-			return HttpResponse.json(
-				{
-					error: {
-						code: "invalid_account_export_request",
-						message: "At least one account id is required",
-					},
-				},
-				{ status: 400 },
-			);
-		}
-		const missing = payload.accountIds.find((accountId) => !findAccount(accountId));
-		if (missing) {
-			return HttpResponse.json(
-				{ error: { code: "account_not_found", message: "Account not found" } },
-				{ status: 404 },
-			);
-		}
-		return new HttpResponse("zip-placeholder", {
-			status: 200,
-			headers: {
-				"Content-Type": "application/zip",
-				"Content-Disposition": 'attachment; filename="accounts-export.zip"',
-			},
-		});
-	}),
-
-	http.get("/api/accounts/:accountId/export", ({ params }) => {
-		const accountId = String(params.accountId);
-		const account = findAccount(accountId);
-		if (!account) {
-			return HttpResponse.json(
-				{ error: { code: "account_not_found", message: "Account not found" } },
-				{ status: 404 },
-			);
-		}
-		return new HttpResponse(
-			JSON.stringify({
-				tokens: {
-					idToken: "id-token",
-					accessToken: "access-token",
-					refreshToken: "refresh-token",
-				},
-				lastRefreshAt: "2026-04-14T00:00:00Z",
-			}),
-			{
-				status: 200,
-				headers: {
-					"Content-Type": "application/json",
-					"Content-Disposition": `attachment; filename="${accountId}.auth.json"`,
-				},
-			},
-		);
-	}),
-
 	http.post("/api/accounts/:accountId/pause", ({ params }) => {
 		const accountId = String(params.accountId);
 		const account = findAccount(accountId);
@@ -423,6 +345,26 @@ export const handlers = [
 		}
 		account.status = "active";
 		return HttpResponse.json({ status: "reactivated" });
+	}),
+
+	http.put("/api/accounts/:accountId/expiry", async ({ params, request }) => {
+		const accountId = String(params.accountId);
+		const account = findAccount(accountId);
+		if (!account) {
+			return HttpResponse.json(
+				{ error: { code: "account_not_found", message: "Account not found" } },
+				{ status: 404 },
+			);
+		}
+		const payload = await parseJsonBody(request, AccountExpiryUpdatePayloadSchema);
+		if (!payload) {
+			return HttpResponse.json(
+				{ error: { code: "invalid_request", message: "Invalid request payload" } },
+				{ status: 400 },
+			);
+		}
+		account.expiresOn = payload.expiresOn;
+		return HttpResponse.json({ status: "updated", expiresOn: account.expiresOn });
 	}),
 
 	http.get("/api/accounts/:accountId/trends", ({ params }) => {
@@ -485,6 +427,47 @@ export const handlers = [
 		return HttpResponse.json(state.settings);
 	}),
 
+	http.get("/api/settings/backup", () => {
+		return new HttpResponse(
+			JSON.stringify({
+				version: 1,
+				exportedAt: new Date().toISOString(),
+				accounts: state.accounts.map((account) => ({
+					accountId: account.accountId,
+					chatgptAccountId: account.accountId,
+					email: account.email,
+					planType: account.planType,
+					status: account.status,
+					deactivationReason: null,
+					resetAt: null,
+					blockedAt: null,
+					expiresOn: account.expiresOn ?? null,
+					lastRefreshAt: new Date().toISOString(),
+					tokens: {
+						idToken: "id-token",
+						accessToken: "access-token",
+						refreshToken: "refresh-token",
+						accountId: account.accountId,
+					},
+				})),
+				dashboardSettings: state.settings,
+				dashboardAuth: {
+					passwordHash: null,
+					totpRequiredOnLogin: state.settings.totpRequiredOnLogin,
+					totpSecret: null,
+				},
+				apiKeys: state.apiKeys,
+			}),
+			{
+				status: 200,
+				headers: {
+					"Content-Type": "application/json",
+					"Content-Disposition": 'attachment; filename="codex-lb-backup.json"',
+				},
+			},
+		);
+	}),
+
 	http.get("/api/firewall/ips", () => {
 		return HttpResponse.json({
 			mode:
@@ -540,6 +523,39 @@ export const handlers = [
 			...payload,
 		});
 		return HttpResponse.json(state.settings);
+	}),
+
+	http.post("/api/settings/restore", async ({ request }) => {
+		const formData = await request.formData();
+		const fileEntries = Array.from(formData.values()).filter(
+			(value): value is File => value instanceof File,
+		);
+		if (fileEntries.length !== 1) {
+			return HttpResponse.json(
+				{
+					error: {
+						code: "invalid_backup_payload",
+						message: "Exactly one backup file is required",
+					},
+				},
+				{ status: 400 },
+			);
+		}
+		const sequence = state.accounts.length + 1;
+		const importedAccount = createAccountSummary({
+			accountId: `acc_restored_${sequence}`,
+			email: `restored-${sequence}@example.com`,
+			displayName: `restored-${sequence}@example.com`,
+			status: "active",
+		});
+		state.accounts = [...state.accounts, importedAccount];
+		return HttpResponse.json({
+			settingsApplied: true,
+			accountsImported: 1,
+			accountsSkipped: 0,
+			apiKeysImported: 0,
+			apiKeysSkipped: 0,
+		});
 	}),
 
 	http.get("/api/sticky-sessions", ({ request }) => {

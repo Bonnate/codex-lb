@@ -21,22 +21,22 @@ export function useFirewall() {
   const createMutation = useMutation({
     mutationFn: (ipAddress: string) => createFirewallIp({ ipAddress }),
     onSuccess: () => {
-      toast.success("IP added to firewall");
+      toast.success("방화벽에 IP를 추가했습니다");
       invalidate();
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to add firewall IP");
+      toast.error(error.message || "방화벽 IP를 추가하지 못했습니다");
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (ipAddress: string) => deleteFirewallIp(ipAddress),
     onSuccess: () => {
-      toast.success("IP removed from firewall");
+      toast.success("방화벽에서 IP를 제거했습니다");
       invalidate();
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to remove firewall IP");
+      toast.error(error.message || "방화벽 IP를 제거하지 못했습니다");
     },
   });
 

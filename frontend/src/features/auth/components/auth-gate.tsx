@@ -55,7 +55,7 @@ export function AuthGate({ children }: PropsWithChildren) {
             </div>
             <div>
               <h1 className="text-xl font-semibold tracking-tight">Codex LB</h1>
-              <p className="mt-0.5 text-sm text-muted-foreground">API Load Balancer</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">API 로드 밸런서</p>
             </div>
           </div>
           <LoginForm />
@@ -68,10 +68,10 @@ export function AuthGate({ children }: PropsWithChildren) {
     return (
       <div className="relative flex min-h-screen items-center justify-center p-4">
         <div className="w-full max-w-lg rounded-2xl border bg-card p-6 shadow-sm">
-          <h1 className="text-lg font-semibold tracking-tight">Reverse proxy authentication required</h1>
+          <h1 className="text-lg font-semibold tracking-tight">리버스 프록시 인증이 필요합니다</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            This dashboard expects a trusted auth header from your reverse proxy. Open it through Authelia
-            or configure a fallback dashboard password first.
+            이 대시보드는 리버스 프록시가 전달하는 신뢰된 인증 헤더를 기대합니다. Authelia를 통해 열거나,
+            먼저 대체 대시보드 비밀번호를 설정하세요.
           </p>
         </div>
       </div>

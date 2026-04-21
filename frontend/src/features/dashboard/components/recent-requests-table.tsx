@@ -99,8 +99,8 @@ export function RecentRequestsTable({
     return (
       <EmptyState
         icon={Inbox}
-        title="No request logs"
-        description="No request logs match the current filters."
+        title="요청 로그가 없습니다"
+        description="현재 필터와 일치하는 요청 로그가 없습니다."
       />
     );
   }
@@ -112,15 +112,15 @@ export function RecentRequestsTable({
         <Table className="min-w-[1160px] table-fixed">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="w-28 pl-4 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">Time</TableHead>
-              <TableHead className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">Account</TableHead>
-              <TableHead className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">API Key</TableHead>
-              <TableHead className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">Model</TableHead>
-              <TableHead className="w-20 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">Transport</TableHead>
-              <TableHead className="w-24 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">Status</TableHead>
-              <TableHead className="w-24 text-right text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">Tokens</TableHead>
-              <TableHead className="w-16 text-right text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">Cost</TableHead>
-              <TableHead className="w-72 pr-4 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">Error</TableHead>
+              <TableHead className="w-28 pl-4 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">시각</TableHead>
+              <TableHead className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">계정</TableHead>
+              <TableHead className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">API 키</TableHead>
+              <TableHead className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">모델</TableHead>
+              <TableHead className="w-20 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">전송</TableHead>
+              <TableHead className="w-24 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">상태</TableHead>
+              <TableHead className="w-24 text-right text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">토큰</TableHead>
+              <TableHead className="w-16 text-right text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">비용</TableHead>
+              <TableHead className="w-72 pr-4 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">오류</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -159,7 +159,7 @@ export function RecentRequestsTable({
                       </span>
                       {showRequestedTier ? (
                         <div className="text-[11px] text-muted-foreground">
-                          Requested {request.requestedServiceTier}
+                          요청 티어 {request.requestedServiceTier}
                         </div>
                       ) : null}
                     </div>
@@ -189,7 +189,7 @@ export function RecentRequestsTable({
                       <div>{formatCompactNumber(request.tokens)}</div>
                       {request.cachedInputTokens != null && request.cachedInputTokens > 0 && (
                         <div className="text-[11px] text-muted-foreground">
-                          {formatCompactNumber(request.cachedInputTokens)} Cached
+                          {formatCompactNumber(request.cachedInputTokens)} 캐시됨
                         </div>
                       )}
                     </div>
@@ -217,7 +217,7 @@ export function RecentRequestsTable({
                           className="h-6 px-2 text-[11px]"
                           onClick={() => setSelectedRequest(request)}
                         >
-                          View Details
+                          상세 보기
                         </Button>
                       </div>
                     ) : (
@@ -246,38 +246,38 @@ export function RecentRequestsTable({
       <Dialog open={selectedRequest !== null} onOpenChange={(open) => { if (!open) setSelectedRequest(null); }}>
         <DialogContent className="max-h-[85vh] sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Request Details</DialogTitle>
-            <DialogDescription>Inspect request metadata and copy the fields you need.</DialogDescription>
+            <DialogTitle>요청 상세</DialogTitle>
+            <DialogDescription>요청 메타데이터를 확인하고 필요한 값을 복사하세요.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 overflow-y-auto">
             <div className="space-y-3 rounded-md border bg-muted/30 p-4">
               <RequestDetailField
-                label="Request ID"
+                label="요청 ID"
                 value={selectedRequest?.requestId ?? "—"}
                 mono
                 copyValue={selectedRequest?.requestId ?? ""}
-                copyLabel="Copy Request ID"
+                copyLabel="요청 ID 복사"
                 compactCopy
               />
               <div className="grid gap-3 sm:grid-cols-3">
-                <RequestDetailField label="Status" value={selectedRequest ? (REQUEST_STATUS_LABELS[selectedRequest.status] ?? selectedRequest.status) : "—"} />
-                <RequestDetailField label="Model" value={selectedRequest ? formatModelLabel(selectedRequest.model, selectedRequest.reasoningEffort, selectedRequest.actualServiceTier ?? selectedRequest.serviceTier) : "—"} mono />
-                <RequestDetailField label="Transport" value={selectedRequest?.transport ? (TRANSPORT_LABELS[selectedRequest.transport] ?? selectedRequest.transport) : "—"} />
-                <RequestDetailField label="Time" value={selectedRequest ? formatDateTimeInline(selectedRequest.requestedAt) : "—"} />
-                <RequestDetailField label="Error Code" value={selectedRequest?.errorCode ?? "—"} mono />
+                <RequestDetailField label="상태" value={selectedRequest ? (REQUEST_STATUS_LABELS[selectedRequest.status] ?? selectedRequest.status) : "—"} />
+                <RequestDetailField label="모델" value={selectedRequest ? formatModelLabel(selectedRequest.model, selectedRequest.reasoningEffort, selectedRequest.actualServiceTier ?? selectedRequest.serviceTier) : "—"} mono />
+                <RequestDetailField label="전송 방식" value={selectedRequest?.transport ? (TRANSPORT_LABELS[selectedRequest.transport] ?? selectedRequest.transport) : "—"} />
+                <RequestDetailField label="시각" value={selectedRequest ? formatDateTimeInline(selectedRequest.requestedAt) : "—"} />
+                <RequestDetailField label="오류 코드" value={selectedRequest?.errorCode ?? "—"} mono />
               </div>
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-medium">Full Error</h3>
+                <h3 className="text-sm font-medium">전체 오류</h3>
                 {selectedRequest?.errorMessage ? (
-                  <CopyButton value={selectedRequest.errorMessage} label="Copy Error" iconOnly />
+                  <CopyButton value={selectedRequest.errorMessage} label="오류 복사" iconOnly />
                 ) : null}
               </div>
               <div className="max-h-[36vh] overflow-y-auto rounded-md bg-muted/50 p-3">
                 <p className="whitespace-pre-wrap break-words font-mono text-xs leading-relaxed">
-                  {selectedRequest?.errorMessage ?? selectedRequest?.errorCode ?? "No error detail recorded."}
+                  {selectedRequest?.errorMessage ?? selectedRequest?.errorCode ?? "기록된 오류 상세가 없습니다."}
                 </p>
               </div>
             </div>
@@ -303,7 +303,7 @@ function RequestDetailField({
   value,
   mono = false,
   copyValue,
-  copyLabel = "Copy",
+  copyLabel = "복사",
   compactCopy = false,
 }: RequestDetailFieldProps) {
   return (

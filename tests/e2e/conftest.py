@@ -173,7 +173,7 @@ def import_test_account():
                 "application/json",
             )
         }
-        response = await client.post("/api/accounts/import", files=files)
+        response = await client.post("/api/settings/restore", files=files)
         assert response.status_code == 200
 
     return _import

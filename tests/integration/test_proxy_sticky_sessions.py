@@ -53,7 +53,7 @@ def _make_auth_json(account_id: str, email: str) -> dict:
 async def _import_account(async_client, account_id: str, email: str) -> str:
     auth_json = _make_auth_json(account_id, email)
     files = {"auth_json": ("auth.json", json.dumps(auth_json), "application/json")}
-    response = await async_client.post("/api/accounts/import", files=files)
+    response = await async_client.post("/api/settings/restore", files=files)
     assert response.status_code == 200
     payload = response.json()
     return payload["accounts"][0]["accountId"]

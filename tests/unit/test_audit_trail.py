@@ -10,7 +10,6 @@ import pytest
 from sqlalchemy import select
 
 import app.core.audit.service as audit_service_module
-from app.core.auth import generate_unique_account_id
 from app.core.utils.time import utcnow
 from app.db.models import AuditLog
 from app.db.session import SessionLocal
@@ -54,22 +53,29 @@ async def _wait_for_audit_log(action: str, *, attempts: int = 20) -> AuditLog:
 
 
 @pytest.mark.asyncio
-async def test_account_creation_writes_audit_log(async_client) -> None:
+async def test_settings_restore_writes_audit_log(async_client) -> None:
     email = "audit@example.com"
     raw_account_id = "acc_audit"
-    expected_account_id = generate_unique_account_id(raw_account_id, email)
 
     response = await async_client.post(
-        "/api/accounts/import",
-        files={"auth_json": ("auth.json", json.dumps(_make_auth_json(raw_account_id, email)), "application/json")},
-        headers={"x-request-id": "audit-account-create"},
+        "/api/settings/restore",
+        files={"backup_file": ("auth.json", json.dumps(_make_auth_json(raw_account_id, email)), "application/json")},
+        headers={"x-request-id": "audit-settings-restore"},
     )
 
     assert response.status_code == 200
 
-    audit_log = await _wait_for_audit_log("account_created")
-    assert audit_log.request_id == "audit-account-create"
-    assert audit_log.details == json.dumps({"account_id": expected_account_id})
+    audit_log = await _wait_for_audit_log("settings_restored")
+    assert audit_log.request_id == "audit-settings-restore"
+    assert audit_log.details == json.dumps(
+        {
+            "settings_applied": False,
+            "accounts_imported": 1,
+            "accounts_skipped": 0,
+            "api_keys_imported": 0,
+            "api_keys_skipped": 0,
+        }
+    )
 
 
 @pytest.mark.asyncio

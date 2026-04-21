@@ -1,62 +1,56 @@
 ## ADDED Requirements
 
-### Requirement: Dashboard account import accepts auth files and export bundles
+### Requirement: Dashboard backup export returns a versioned durable snapshot
 
-The dashboard account import API SHALL accept one or more uploaded `auth.json` files or exported account archive bundles in a single `POST /api/accounts/import` request. The system MUST validate each extracted auth payload, import each valid account, and return the imported accounts as a list in request order.
+The dashboard SHALL provide `GET /api/settings/backup` that returns a single JSON attachment containing the durable dashboard state required to move or restore an instance. The payload MUST include `version`, `exportedAt`, `accounts`, `dashboardSettings`, `dashboardAuth`, and `apiKeys`.
 
-#### Scenario: Import multiple accounts in one request
+#### Scenario: Export dashboard backup
 
-- **WHEN** an admin submits `POST /api/accounts/import` with multiple `auth_json` files
-- **THEN** the system imports each file
-- **AND** returns `{ "accounts": [{ "accountId": "..." }, { "accountId": "..." }] }`
-
-#### Scenario: Import a single account in one request
-
-- **WHEN** an admin submits `POST /api/accounts/import` with one `auth_json` file
-- **THEN** the system imports the account
-- **AND** still returns the imported result inside the `accounts` list
-
-#### Scenario: Import exported archive bundle
-
-- **WHEN** an admin submits `POST /api/accounts/import` with an exported archive bundle containing multiple `auth.json` payloads
-- **THEN** the system extracts each auth payload from the archive
-- **AND** imports each valid account
-- **AND** returns the imported accounts as a flat `accounts` list
-
-#### Scenario: Duplicate account import is ignored
-
-- **WHEN** an admin submits `POST /api/accounts/import` with an `auth_json` file for an account that is already stored locally
-- **THEN** the system skips that file without modifying the existing account
-- **AND** the response increments `skippedCount`
-
-### Requirement: Dashboard bulk account export returns archive bundle
-
-The dashboard SHALL allow exporting multiple stored accounts via `POST /api/accounts/export`. The system MUST return a downloadable archive bundle containing one `auth.json` payload per selected account so the archive can be imported into another `codex-lb` instance later.
-
-#### Scenario: Export multiple existing accounts
-
-- **WHEN** an admin requests `POST /api/accounts/export` with multiple existing `account_ids`
-- **THEN** the system returns `200` with `application/zip`
-- **AND** includes a `Content-Disposition` attachment filename ending in `.zip`
-- **AND** the archive contains one `.auth.json` file per requested account
-
-#### Scenario: Export request without account ids
-
-- **WHEN** an admin requests `POST /api/accounts/export` with an empty `account_ids` list
-- **THEN** the system returns `400` with dashboard error code `invalid_account_export_request`
-
-### Requirement: Dashboard account export returns auth.json
-
-The dashboard SHALL allow exporting a stored account via `GET /api/accounts/{account_id}/export`. The system MUST return a downloadable JSON payload containing the stored account tokens in `auth.json` format so the file can be imported into another `codex-lb` instance later.
-
-#### Scenario: Export existing account
-
-- **WHEN** an admin requests `GET /api/accounts/{account_id}/export` for an existing account
+- **WHEN** an admin requests `GET /api/settings/backup`
 - **THEN** the system returns `200` with `application/json`
-- **AND** includes a `Content-Disposition` attachment filename ending in `.auth.json`
-- **AND** the payload contains `tokens.idToken`, `tokens.accessToken`, `tokens.refreshToken`, and `lastRefreshAt`
+- **AND** includes a `Content-Disposition` attachment filename ending in `codex-lb-backup.json`
+- **AND** the payload contains a versioned root object with `accounts`, `dashboardSettings`, `dashboardAuth`, and `apiKeys`
 
-#### Scenario: Export missing account
+#### Scenario: Export account durable state
 
-- **WHEN** an admin requests `GET /api/accounts/{account_id}/export` for an unknown account
-- **THEN** the system returns `404` with dashboard error code `account_not_found`
+- **WHEN** an admin exports a dashboard backup that contains stored accounts
+- **THEN** each exported account includes durable identity fields, decrypted portable tokens, `lastRefreshAt`, `status`, `deactivationReason`, `resetAt`, and `blockedAt`
+
+### Requirement: Dashboard restore overwrites settings and merges accounts and API keys
+
+The dashboard SHALL provide `POST /api/settings/restore` that accepts exactly one uploaded backup file. The system MUST overwrite dashboard settings and dashboard auth state from the backup, and MUST merge accounts and API keys by skipping duplicates instead of updating them.
+
+#### Scenario: Restore dashboard backup
+
+- **WHEN** an admin submits `POST /api/settings/restore` with one valid backup file
+- **THEN** the system restores dashboard settings and dashboard auth state from the file
+- **AND** imports accounts that are not already stored
+- **AND** imports API keys that do not conflict by `id` or `key_hash`
+- **AND** returns a summary containing `settingsApplied`, `accountsImported`, `accountsSkipped`, `apiKeysImported`, and `apiKeysSkipped`
+
+#### Scenario: Skip duplicate account during restore
+
+- **WHEN** an admin restores a backup containing an account whose normalized identity is already stored locally
+- **THEN** the system skips that account without modifying the existing stored row
+- **AND** increments `accountsSkipped`
+
+#### Scenario: Skip duplicate API key during restore
+
+- **WHEN** an admin restores a backup containing an API key whose `id` or `key_hash` already exists locally
+- **THEN** the system skips that API key without modifying the existing stored row
+- **AND** increments `apiKeysSkipped`
+
+#### Scenario: Reject invalid restore payload
+
+- **WHEN** an admin submits `POST /api/settings/restore` without exactly one valid backup file
+- **THEN** the system returns `400` with dashboard error code `invalid_backup_payload`
+
+### Requirement: Legacy account import and export endpoints are removed
+
+The dashboard SHALL NOT use or expose the legacy account import/export endpoints for operator backup workflows.
+
+#### Scenario: Account backup workflow uses settings endpoints
+
+- **WHEN** an operator needs to export or restore account state
+- **THEN** the workflow uses `GET /api/settings/backup` and `POST /api/settings/restore`
+- **AND** not `POST /api/accounts/import`, `POST /api/accounts/export`, or `GET /api/accounts/{account_id}/export`

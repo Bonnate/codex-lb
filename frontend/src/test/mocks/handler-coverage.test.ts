@@ -28,9 +28,6 @@ const EXPECTED_ENDPOINTS = [
 	"GET /api/request-logs/options",
 	// accounts
 	"GET /api/accounts",
-	"POST /api/accounts/import",
-	"POST /api/accounts/export",
-	"GET /api/accounts/:accountId/export",
 	"POST /api/accounts/:accountId/pause",
 	"POST /api/accounts/:accountId/reactivate",
 	"GET /api/accounts/:accountId/trends",
@@ -53,6 +50,8 @@ const EXPECTED_ENDPOINTS = [
 	// settings
 	"GET /api/settings",
 	"PUT /api/settings",
+	"GET /api/settings/backup",
+	"POST /api/settings/restore",
 	"GET /api/sticky-sessions",
 	"POST /api/sticky-sessions/delete",
 	"POST /api/sticky-sessions/delete-filtered",
