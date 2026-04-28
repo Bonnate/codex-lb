@@ -2,6 +2,7 @@ import { ChevronDown, X } from "lucide-react";
 import { useMemo } from "react";
 
 import { Badge } from "@/components/ui/badge";
+import { formatPrivacyLabel, renderPrivacyLabel } from "@/components/blur-email";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -16,7 +17,7 @@ import { usePrivacyStore } from "@/hooks/use-privacy";
 export type MultiSelectOption = {
   value: string;
   label: string;
-  /** When true the label text gets CSS-blurred in privacy mode. */
+  /** When true the label text participates in privacy mode. */
   isEmail?: boolean;
 };
 
@@ -32,7 +33,7 @@ export type MultiSelectFilterProps = {
 };
 
 export function MultiSelectFilter({ label, values, options, onChange }: MultiSelectFilterProps) {
-  const blurred = usePrivacyStore((s) => s.blurred);
+  const privacyMode = usePrivacyStore((s) => s.mode);
   const renderedOptions = useMemo<RenderedOption[]>(() => {
     const byValue = new Map<string, RenderedOption>();
     for (const option of options) {
@@ -69,8 +70,7 @@ export function MultiSelectFilter({ label, values, options, onChange }: MultiSel
         ? (() => {
             const opt = renderedOptions.find((o) => o.value === values[0]);
             const text = opt?.label ?? values[0];
-            const shouldBlur = blurred && opt?.isEmail;
-            return shouldBlur ? <span className="privacy-blur">{text}</span> : text;
+            return opt?.isEmail ? renderPrivacyLabel(text, privacyMode) : text;
           })()
         : `${label} (${values.length})`;
 
@@ -96,7 +96,9 @@ export function MultiSelectFilter({ label, values, options, onChange }: MultiSel
               onSelect={(e) => e.preventDefault()}
             >
               <span className="flex min-w-0 flex-1 items-center gap-2">
-                <span className={blurred && option.isEmail ? "truncate privacy-blur" : "truncate"}>{option.label}</span>
+                <span className={privacyMode === "blur" && option.isEmail ? "truncate privacy-blur" : "truncate"}>
+                  {option.isEmail ? formatPrivacyLabel(option.label, privacyMode) : option.label}
+                </span>
                 {option.isStale ? (
                   <Badge variant="secondary" className="text-[10px]">
                     이전 값

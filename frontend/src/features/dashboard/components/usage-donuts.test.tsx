@@ -19,8 +19,8 @@ describe("UsageDonuts", () => {
       />,
     );
 
-    expect(screen.getByText("5h Remaining")).toBeInTheDocument();
-    expect(screen.getByText("Weekly Remaining")).toBeInTheDocument();
+    expect(screen.getByText("5시간 남은 용량")).toBeInTheDocument();
+    expect(screen.getByText("주간 남은 용량")).toBeInTheDocument();
     expect(screen.getByText("primary@example.com")).toBeInTheDocument();
     expect(screen.getByText("secondary@example.com")).toBeInTheDocument();
   });
@@ -35,9 +35,9 @@ describe("UsageDonuts", () => {
       />,
     );
 
-    expect(screen.getByText("5h Remaining")).toBeInTheDocument();
-    expect(screen.getByText("Weekly Remaining")).toBeInTheDocument();
-    expect(screen.getAllByText("Remaining").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText("5시간 남은 용량")).toBeInTheDocument();
+    expect(screen.getByText("주간 남은 용량")).toBeInTheDocument();
+    expect(screen.getAllByText("남은 용량").length).toBeGreaterThanOrEqual(2);
   });
 
   it("renders safe line only for the primary donut", () => {

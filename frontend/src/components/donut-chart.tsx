@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Cell, Pie, PieChart, Sector, type PieSectorShapeProps } from "recharts";
 
 import { buildDonutPalette } from "@/utils/colors";
+import { renderPrivacyLabel } from "@/components/blur-email";
 import { formatCompactNumber } from "@/utils/formatters";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { usePrivacyStore } from "@/hooks/use-privacy";
@@ -11,9 +12,9 @@ export type DonutChartItem = {
   /** Stable unique key for React reconciliation. Falls back to label if not provided. */
   id?: string;
   label: string;
-  /** Suffix appended after the label (not blurred in privacy mode). */
+  /** Suffix appended after the label (not transformed by privacy mode). */
   labelSuffix?: string;
-  /** When true the label text gets CSS-blurred in privacy mode. */
+  /** When true the label text participates in privacy mode. */
   isEmail?: boolean;
   value: number;
   color?: string;
@@ -99,7 +100,7 @@ function formatUsedPercent(percent: number): string {
 
 export function DonutChart({ items, total, centerValue, title, subtitle, safeLine }: DonutChartProps) {
   const isDark = useThemeStore((s) => s.theme === "dark");
-  const blurred = usePrivacyStore((s) => s.blurred);
+  const privacyMode = usePrivacyStore((s) => s.mode);
   const reducedMotion = useReducedMotion();
   const [activeLegendId, setActiveLegendId] = useState<string | null>(null);
   const legendRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -254,8 +255,8 @@ export function DonutChart({ items, total, centerValue, title, subtitle, safeLin
                   style={{ backgroundColor: item.color }}
                 />
                 <span className="truncate font-medium">
-                  {item.isEmail && blurred
-                    ? <><span className="privacy-blur">{item.label}</span>{item.labelSuffix}</>
+                  {item.isEmail
+                    ? <>{renderPrivacyLabel(item.label, privacyMode)}{item.labelSuffix}</>
                     : <>{item.label}{item.labelSuffix}</>}
                 </span>
               </div>

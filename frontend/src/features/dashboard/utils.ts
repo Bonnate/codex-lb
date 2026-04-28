@@ -13,7 +13,7 @@ import { buildDonutPalette } from "@/utils/colors";
 import {
   formatCachedTokensMeta,
   formatCompactNumber,
-  formatCurrency,
+  formatCostUsd,
   formatRate,
   formatWindowMinutes,
 } from "@/utils/formatters";
@@ -21,9 +21,9 @@ import {
 export type RemainingItem = {
   accountId: string;
   label: string;
-  /** Suffix appended after the label (e.g. compact account ID for duplicates). Not blurred. */
+  /** Suffix appended after the label (e.g. compact account ID for duplicates). Not transformed. */
   labelSuffix: string;
-  /** True when the displayed label is the account email (should be blurred in privacy mode). */
+  /** True when the displayed label is the account email (should participate in privacy mode). */
   isEmail: boolean;
   value: number;
   remainingPercent: number | null;
@@ -190,17 +190,17 @@ export function buildDashboardView(
   const timeframeDays = overview.timeframe.windowMinutes / 1440;
   const requestMeta =
     timeframeHours <= 24
-      ? `Avg/hr ${formatCompactNumber(Math.round(avgPerUnit(metrics?.requests ?? 0, timeframeHours)))}`
-      : `Avg/day ${formatCompactNumber(Math.round(avgPerUnit(metrics?.requests ?? 0, timeframeDays)))}`;
+      ? `시간당 평균 ${formatCompactNumber(Math.round(avgPerUnit(metrics?.requests ?? 0, timeframeHours)))}`
+      : `일당 평균 ${formatCompactNumber(Math.round(avgPerUnit(metrics?.requests ?? 0, timeframeDays)))}`;
   const costMeta =
     timeframeHours <= 24
-      ? `Avg/hr ${formatCurrency(avgPerUnit(cost, timeframeHours))}`
-      : `Avg/day ${formatCurrency(avgPerUnit(cost, timeframeDays))}`;
+      ? `시간당 평균 ${formatCostUsd(avgPerUnit(cost, timeframeHours))}`
+      : `일당 평균 ${formatCostUsd(avgPerUnit(cost, timeframeDays))}`;
   const trends = overview.trends;
 
   const stats: DashboardStat[] = [
     {
-      label: `Requests (${timeframeLabel})`,
+      label: `요청 (${timeframeLabel})`,
       value: formatCompactNumber(metrics?.requests ?? 0),
       meta: requestMeta,
       icon: Activity,
@@ -208,7 +208,7 @@ export function buildDashboardView(
       trendColor: TREND_COLORS[0],
     },
     {
-      label: `Tokens (${timeframeLabel})`,
+      label: `토큰 (${timeframeLabel})`,
       value: formatCompactNumber(metrics?.tokens ?? 0),
       meta: formatCachedTokensMeta(metrics?.tokens, metrics?.cachedInputTokens),
       icon: Coins,
@@ -216,19 +216,19 @@ export function buildDashboardView(
       trendColor: TREND_COLORS[1],
     },
     {
-      label: `Cost (${timeframeLabel})`,
-      value: formatCurrency(cost),
+      label: `비용 (${timeframeLabel})`,
+      value: formatCostUsd(cost),
       meta: costMeta,
       icon: DollarSign,
       trend: trendPointsToValues(trends.cost),
       trendColor: TREND_COLORS[2],
     },
     {
-      label: `Error rate (${timeframeLabel})`,
+      label: `오류율 (${timeframeLabel})`,
       value: formatRate(metrics?.errorRate ?? null),
       meta: metrics?.topError
-        ? `Top: ${metrics.topError}`
-        : `~${formatCompactNumber(metrics?.errorCount ?? Math.round((metrics?.errorRate ?? 0) * (metrics?.requests ?? 0)))} errors in ${timeframeLabel}`,
+        ? `가장 많음: ${metrics.topError}`
+        : `약 ${formatCompactNumber(metrics?.errorCount ?? Math.round((metrics?.errorRate ?? 0) * (metrics?.requests ?? 0)))}건 오류 · ${timeframeLabel}`,
       icon: AlertTriangle,
       trend: trendPointsToValues(trends.errorRate),
       trendColor: TREND_COLORS[3],

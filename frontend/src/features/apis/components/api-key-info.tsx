@@ -2,7 +2,7 @@ import type { ApiKey, LimitType } from "@/features/api-keys/schemas";
 import { cn } from "@/lib/utils";
 import {
 	formatCompactNumber,
-	formatCurrency,
+	formatCostUsd,
 	formatTimeLong,
 } from "@/utils/formatters";
 
@@ -102,7 +102,7 @@ export function ApiKeyInfo({
 								</span>
 								<span className="mx-1 text-muted-foreground/40">|</span>
 								<span className="font-medium">
-									{formatCurrency(usage.totalCostUsd)}
+									{formatCostUsd(usage.totalCostUsd)}
 								</span>
 							</span>
 						) : (

@@ -66,7 +66,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       return applySession(set, session);
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : "Failed to refresh session",
+        error: error instanceof Error ? error.message : "세션을 새로고침하지 못했습니다",
       });
       throw error;
     } finally {
@@ -80,7 +80,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       return applySession(set, session);
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : "Login failed",
+        error: error instanceof Error ? error.message : "로그인하지 못했습니다",
       });
       throw error;
     } finally {
@@ -111,7 +111,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       return applySession(set, session);
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : "TOTP verification failed",
+        error: error instanceof Error ? error.message : "TOTP를 확인하지 못했습니다",
       });
       throw error;
     } finally {

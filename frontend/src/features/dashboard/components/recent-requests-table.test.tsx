@@ -81,31 +81,31 @@ describe("RecentRequestsTable", () => {
     expect(screen.getByText("Primary Account")).toBeInTheDocument();
     expect(screen.getByText("Key Alpha")).toBeInTheDocument();
     expect(screen.getByText("gpt-5.1 (high, default)")).toBeInTheDocument();
-    expect(screen.getByText("Requested priority")).toBeInTheDocument();
+    expect(screen.getByText("요청 티어 priority")).toBeInTheDocument();
     expect(screen.getByText("WS")).toBeInTheDocument();
-    expect(screen.getByText("Rate limit")).toBeInTheDocument();
+    expect(screen.getByText("속도 제한")).toBeInTheDocument();
     expect(screen.getByText("rate_limit_exceeded")).toBeInTheDocument();
 
-    const viewButton = screen.getByRole("button", { name: "View Details" });
+    const viewButton = screen.getByRole("button", { name: "상세 보기" });
     fireEvent.click(viewButton);
     const dialog = screen.getByRole("dialog");
     expect(dialog).toBeInTheDocument();
-    expect(screen.getByText("Request Details")).toBeInTheDocument();
+    expect(screen.getByText("요청 상세")).toBeInTheDocument();
     expect(screen.getByText("req-1")).toBeInTheDocument();
     expect(screen.getAllByText("rate_limit_exceeded")[0]).toBeInTheDocument();
     expect(dialog.textContent).toContain("Rate limit reached while processing this request");
 
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Copy Request ID" }));
+      fireEvent.click(screen.getByRole("button", { name: "요청 ID 복사" }));
       await Promise.resolve();
     });
 
     expect(writeText).toHaveBeenCalledWith("req-1");
-    expect(toastSuccess).toHaveBeenCalledWith("Copied to clipboard");
-    expect(screen.getByRole("button", { name: "Copy Request ID Copied" })).toBeInTheDocument();
+    expect(toastSuccess).toHaveBeenCalledWith("클립보드에 복사했습니다");
+    expect(screen.getByRole("button", { name: "요청 ID 복사 완료" })).toBeInTheDocument();
 
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Copy Error" }));
+      fireEvent.click(screen.getByRole("button", { name: "오류 복사" }));
       await Promise.resolve();
     });
 
@@ -114,7 +114,7 @@ describe("RecentRequestsTable", () => {
 
   it("renders empty state", () => {
     render(<RecentRequestsTable {...PAGINATION_PROPS} total={0} accounts={[]} requests={[]} />);
-    expect(screen.getByText("No request logs match the current filters.")).toBeInTheDocument();
+    expect(screen.getByText("현재 필터와 일치하는 요청 로그가 없습니다.")).toBeInTheDocument();
   });
 
   it("renders placeholder transport for legacy rows", () => {
@@ -179,9 +179,9 @@ describe("RecentRequestsTable", () => {
     );
 
     expect(screen.getAllByText("upstream_error")[0]).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "View Details" }));
+    fireEvent.click(screen.getByRole("button", { name: "상세 보기" }));
 
     expect(screen.getByRole("dialog")).toHaveTextContent("upstream_error");
-    expect(screen.getByRole("dialog")).toHaveTextContent("Full Error");
+    expect(screen.getByRole("dialog")).toHaveTextContent("전체 오류");
   });
 });

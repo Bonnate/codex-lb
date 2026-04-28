@@ -1,11 +1,11 @@
 import { cn } from "@/lib/utils";
-import { isEmailLabel } from "@/components/blur-email";
+import { isEmailLabel, renderPrivacyLabel } from "@/components/blur-email";
 import { usePrivacyStore } from "@/hooks/use-privacy";
 import { StatusBadge } from "@/components/status-badge";
 import type { AccountSummary } from "@/features/accounts/schemas";
 import { normalizeStatus, quotaBarColor, quotaBarTrack } from "@/utils/account-status";
 import { formatCompactAccountId } from "@/utils/account-identifiers";
-import { formatSlug } from "@/utils/formatters";
+import { formatPlanTypeLabel } from "@/utils/formatters";
 
 export type AccountListItemProps = {
   account: AccountSummary;
@@ -36,14 +36,14 @@ export function AccountListItem({
   showAccountId = false,
   onSelect,
 }: AccountListItemProps) {
-  const blurred = usePrivacyStore((s) => s.blurred);
+  const privacyMode = usePrivacyStore((s) => s.mode);
   const status = normalizeStatus(account.status);
   const title = account.displayName || account.email;
   const titleIsEmail = isEmailLabel(title, account.email);
   const emailSubtitle = account.displayName && account.displayName !== account.email
     ? account.email
     : null;
-  const baseSubtitle = emailSubtitle ?? formatSlug(account.planType);
+  const baseSubtitle = emailSubtitle ?? formatPlanTypeLabel(account.planType);
   const idSuffix = showAccountId ? ` | ID ${formatCompactAccountId(account.accountId)}` : "";
   const expirySuffix = account.expiresOn ? ` | 만료 ${account.expiresOn}` : "";
   const secondary = account.usage?.secondaryRemainingPercent ?? null;
@@ -62,12 +62,12 @@ export function AccountListItem({
       <div className="flex items-center gap-2.5">
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">
-            {titleIsEmail && blurred ? <span className="privacy-blur">{title}</span> : title}
+            {titleIsEmail ? renderPrivacyLabel(title, privacyMode) : title}
           </p>
           <p className="truncate text-xs text-muted-foreground" title={showAccountId ? `계정 ID ${account.accountId}` : undefined}>
             {emailSubtitle ? (
               <>
-                <span className={blurred ? "privacy-blur" : undefined}>{emailSubtitle}</span>
+                {renderPrivacyLabel(emailSubtitle, privacyMode)}
                 {idSuffix}
                 {expirySuffix}
               </>

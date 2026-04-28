@@ -12,6 +12,7 @@ from app.core.audit.service import AuditService
 from app.core.auth.dependencies import set_dashboard_error_format, validate_dashboard_session
 from app.core.config.settings_cache import get_settings_cache
 from app.core.exceptions import DashboardBadRequestError
+from app.core.fx.frankfurter_cache import get_usd_fx_snapshot_cached
 from app.dependencies import SettingsContext, get_settings_context
 from app.modules.settings.schemas import (
     DashboardRestoreResponse,
@@ -19,9 +20,33 @@ from app.modules.settings.schemas import (
     DashboardSettingsUpdateRequest,
     RuntimeConnectAddressResponse,
 )
-from app.modules.settings.service import DashboardSettingsUpdateData, InvalidDashboardBackupError
+from app.modules.settings.display_currency import normalize_display_cost_currency
+from app.modules.settings.service import DashboardSettingsData, DashboardSettingsUpdateData, InvalidDashboardBackupError
 
 LOOPBACK_HOSTS = {"localhost", "127.0.0.1", "::1", "[::1]"}
+
+
+async def _dashboard_settings_response(settings: DashboardSettingsData) -> DashboardSettingsResponse:
+    fx = await get_usd_fx_snapshot_cached()
+    rates = dict(fx.rates) if fx is not None else {"USD": 1.0}
+    return DashboardSettingsResponse(
+        sticky_threads_enabled=settings.sticky_threads_enabled,
+        upstream_stream_transport=settings.upstream_stream_transport,
+        prefer_earlier_reset_accounts=settings.prefer_earlier_reset_accounts,
+        routing_strategy=settings.routing_strategy,
+        openai_cache_affinity_max_age_seconds=settings.openai_cache_affinity_max_age_seconds,
+        http_responses_session_bridge_prompt_cache_idle_ttl_seconds=settings.http_responses_session_bridge_prompt_cache_idle_ttl_seconds,
+        http_responses_session_bridge_gateway_safe_mode=settings.http_responses_session_bridge_gateway_safe_mode,
+        sticky_reallocation_budget_threshold_pct=settings.sticky_reallocation_budget_threshold_pct,
+        import_without_overwrite=settings.import_without_overwrite,
+        totp_required_on_login=settings.totp_required_on_login,
+        totp_configured=settings.totp_configured,
+        api_key_auth_enabled=settings.api_key_auth_enabled,
+        display_cost_currency=settings.display_cost_currency,
+        cost_fx_rates=rates,
+        cost_fx_rate_date=fx.rate_date if fx is not None else None,
+        cost_fx_fetched_at=fx.fetched_at if fx is not None else None,
+    )
 
 
 def _is_non_loopback_ipv4(value: str | None) -> bool:
@@ -78,20 +103,7 @@ async def get_settings(
     context: SettingsContext = Depends(get_settings_context),
 ) -> DashboardSettingsResponse:
     settings = await context.service.get_settings()
-    return DashboardSettingsResponse(
-        sticky_threads_enabled=settings.sticky_threads_enabled,
-        upstream_stream_transport=settings.upstream_stream_transport,
-        prefer_earlier_reset_accounts=settings.prefer_earlier_reset_accounts,
-        routing_strategy=settings.routing_strategy,
-        openai_cache_affinity_max_age_seconds=settings.openai_cache_affinity_max_age_seconds,
-        http_responses_session_bridge_prompt_cache_idle_ttl_seconds=settings.http_responses_session_bridge_prompt_cache_idle_ttl_seconds,
-        http_responses_session_bridge_gateway_safe_mode=settings.http_responses_session_bridge_gateway_safe_mode,
-        sticky_reallocation_budget_threshold_pct=settings.sticky_reallocation_budget_threshold_pct,
-        import_without_overwrite=settings.import_without_overwrite,
-        totp_required_on_login=settings.totp_required_on_login,
-        totp_configured=settings.totp_configured,
-        api_key_auth_enabled=settings.api_key_auth_enabled,
-    )
+    return await _dashboard_settings_response(settings)
 
 
 @router.get("/runtime/connect-address", response_model=RuntimeConnectAddressResponse)
@@ -203,6 +215,11 @@ async def update_settings(
                     if payload.api_key_auth_enabled is not None
                     else current.api_key_auth_enabled
                 ),
+                display_cost_currency=normalize_display_cost_currency(
+                    payload.display_cost_currency
+                    if payload.display_cost_currency is not None
+                    else current.display_cost_currency
+                ),
             )
         )
     except ValueError as exc:
@@ -223,6 +240,7 @@ async def update_settings(
             "import_without_overwrite",
             "totp_required_on_login",
             "api_key_auth_enabled",
+            "display_cost_currency",
         )
         if getattr(current, field_name) != getattr(updated, field_name)
     ]
@@ -231,17 +249,4 @@ async def update_settings(
         actor_ip=request.client.host if request.client else None,
         details={"changed_fields": changed_fields},
     )
-    return DashboardSettingsResponse(
-        sticky_threads_enabled=updated.sticky_threads_enabled,
-        upstream_stream_transport=updated.upstream_stream_transport,
-        prefer_earlier_reset_accounts=updated.prefer_earlier_reset_accounts,
-        routing_strategy=updated.routing_strategy,
-        openai_cache_affinity_max_age_seconds=updated.openai_cache_affinity_max_age_seconds,
-        http_responses_session_bridge_prompt_cache_idle_ttl_seconds=updated.http_responses_session_bridge_prompt_cache_idle_ttl_seconds,
-        http_responses_session_bridge_gateway_safe_mode=updated.http_responses_session_bridge_gateway_safe_mode,
-        sticky_reallocation_budget_threshold_pct=updated.sticky_reallocation_budget_threshold_pct,
-        import_without_overwrite=updated.import_without_overwrite,
-        totp_required_on_login=updated.totp_required_on_login,
-        totp_configured=updated.totp_configured,
-        api_key_auth_enabled=updated.api_key_auth_enabled,
-    )
+    return await _dashboard_settings_response(updated)

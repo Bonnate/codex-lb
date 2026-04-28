@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -76,13 +76,57 @@ describe("OauthDialog", () => {
       />,
     );
 
-    expect(screen.getByText("Browser (PKCE)")).toBeInTheDocument();
-    expect(screen.getByText("Device code")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Start sign-in" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+    expect(screen.getByText("브라우저 (PKCE)")).toBeInTheDocument();
+    expect(screen.getByText("디바이스 코드")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "로그인 시작" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "취소" })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Start sign-in" }));
+    await user.click(screen.getByRole("button", { name: "로그인 시작" }));
     expect(onStart).toHaveBeenCalledWith("browser");
+  });
+
+  it("renders the account expiry date input when adding a new account", () => {
+    const onExpiresOnChange = vi.fn();
+
+    render(
+      <OauthDialog
+        open
+        state={idleState}
+        onOpenChange={vi.fn()}
+        onStart={vi.fn().mockResolvedValue(undefined)}
+        onComplete={vi.fn().mockResolvedValue(undefined)}
+        onManualCallback={vi.fn().mockResolvedValue(undefined)}
+        onReset={vi.fn()}
+        showExpiryInput
+        expiresOn="2026-05-26"
+        onExpiresOnChange={onExpiresOnChange}
+      />,
+    );
+
+    const expiryInput = screen.getByLabelText("계정 만료일");
+    expect(expiryInput).toHaveValue("2026-05-26");
+
+    fireEvent.change(expiryInput, { target: { value: "2026-06-01" } });
+
+    expect(onExpiresOnChange).toHaveBeenLastCalledWith("2026-06-01");
+  });
+
+  it("hides the account expiry date input when reauthenticating", () => {
+    render(
+      <OauthDialog
+        open
+        state={idleState}
+        onOpenChange={vi.fn()}
+        onStart={vi.fn().mockResolvedValue(undefined)}
+        onComplete={vi.fn().mockResolvedValue(undefined)}
+        onManualCallback={vi.fn().mockResolvedValue(undefined)}
+        onReset={vi.fn()}
+        showExpiryInput={false}
+        expiresOn="2026-05-26"
+      />,
+    );
+
+    expect(screen.queryByLabelText("계정 만료일")).not.toBeInTheDocument();
   });
 
   it("renders device stage with user code and verification URL", () => {
@@ -100,8 +144,8 @@ describe("OauthDialog", () => {
 
     expect(screen.getByText("AAAA-BBBB")).toBeInTheDocument();
     expect(screen.getByText("https://auth.example.com/device")).toBeInTheDocument();
-    expect(screen.getByText(/Waiting for authorization/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Change method" })).toBeInTheDocument();
+    expect(screen.getByText(/인증 대기 중/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "방식 변경" })).toBeInTheDocument();
   });
 
   it("renders success stage", () => {
@@ -117,8 +161,8 @@ describe("OauthDialog", () => {
       />,
     );
 
-    expect(screen.getByText("Account has been added successfully.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
+    expect(screen.getByText("계정이 성공적으로 추가되었습니다.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "완료" })).toBeInTheDocument();
   });
 
   it("renders error stage with message and retry option", () => {
@@ -135,9 +179,9 @@ describe("OauthDialog", () => {
     );
 
     expect(screen.getByText("OAuth failed unexpectedly")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
-    // Dialog footer has both "Try again" and "Close" buttons (plus the dialog's X close button)
-    const closeButtons = screen.getAllByRole("button", { name: "Close" });
+    expect(screen.getByRole("button", { name: "다시 시도" })).toBeInTheDocument();
+    // Dialog footer has both "닫기" and the dialog's X close button.
+    const closeButtons = screen.getAllByRole("button", { name: /닫기|Close/ });
     expect(closeButtons.length).toBeGreaterThanOrEqual(1);
   });
 
@@ -161,7 +205,7 @@ describe("OauthDialog", () => {
       screen.getByPlaceholderText("http://localhost:1455/auth/callback?code=...&state=..."),
       "http://localhost:1455/auth/callback?code=abc&state=expected",
     );
-    await user.click(screen.getByRole("button", { name: "Submit" }));
+    await user.click(screen.getByRole("button", { name: "전송" }));
 
     expect(onManualCallback).toHaveBeenCalledWith(
       "http://localhost:1455/auth/callback?code=abc&state=expected",
@@ -184,7 +228,7 @@ describe("OauthDialog", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Refresh link" }));
+    await user.click(screen.getByRole("button", { name: "링크 새로고침" }));
 
     expect(onStart).toHaveBeenCalledWith("browser");
   });
@@ -202,12 +246,12 @@ describe("OauthDialog", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Refreshing..." })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Change method" })).toBeDisabled();
-    expect(screen.getByText("Generating a fresh sign-in link...")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Copy" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Open sign-in page" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Submit" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "새로 고치는 중..." })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "방식 변경" })).toBeDisabled();
+    expect(screen.getByText("새 로그인 링크를 만드는 중...")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "복사" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "로그인 페이지 열기" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "전송" })).toBeDisabled();
   });
 
   it("clears the pasted callback input when browser refresh disables the form", async () => {
@@ -246,6 +290,6 @@ describe("OauthDialog", () => {
 
     expect(callbackInput).toHaveValue("");
     expect(callbackInput).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Submit" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "전송" })).toBeDisabled();
   });
 });

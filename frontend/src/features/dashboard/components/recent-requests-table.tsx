@@ -1,7 +1,7 @@
 import { Inbox } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { isEmailLabel } from "@/components/blur-email";
+import { isEmailLabel, renderPrivacyLabel } from "@/components/blur-email";
 import { CopyButton } from "@/components/copy-button";
 import { usePrivacyStore } from "@/hooks/use-privacy";
 import { EmptyState } from "@/components/empty-state";
@@ -29,7 +29,7 @@ import { REQUEST_STATUS_LABELS } from "@/utils/constants";
 import {
   formatDateTimeInline,
   formatCompactNumber,
-  formatCurrency,
+  formatCostUsd,
   formatModelLabel,
   formatTimeLong,
 } from "@/utils/formatters";
@@ -73,7 +73,7 @@ export function RecentRequestsTable({
   onOffsetChange,
 }: RecentRequestsTableProps) {
   const [selectedRequest, setSelectedRequest] = useState<RequestLog | null>(null);
-  const blurred = usePrivacyStore((s) => s.blurred);
+  const privacyMode = usePrivacyStore((s) => s.mode);
 
   const accountLabelMap = useMemo(() => {
     const index = new Map<string, string>();
@@ -143,11 +143,7 @@ export function RecentRequestsTable({
                     </div>
                   </TableCell>
                   <TableCell className="truncate align-top text-sm">
-                    {isEmailLabel && blurred ? (
-                      <span className="privacy-blur">{accountLabel}</span>
-                    ) : (
-                      accountLabel
-                    )}
+                    {isEmailLabel ? renderPrivacyLabel(accountLabel, privacyMode) : accountLabel}
                   </TableCell>
                   <TableCell className="truncate align-top text-xs text-muted-foreground">
                     {request.apiKeyName || "--"}
@@ -195,7 +191,7 @@ export function RecentRequestsTable({
                     </div>
                   </TableCell>
                   <TableCell className="text-right align-top font-mono text-xs tabular-nums">
-                    {formatCurrency(request.costUsd)}
+                    {formatCostUsd(request.costUsd)}
                   </TableCell>
                   <TableCell className="pr-4 align-top whitespace-normal">
                     {hasError ? (

@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { OAuthState } from "@/features/accounts/schemas";
 import { formatCountdown } from "@/utils/formatters";
@@ -121,6 +122,9 @@ export type OauthDialogProps = {
   onComplete: () => Promise<void>;
   onManualCallback: (callbackUrl: string) => Promise<void>;
   onReset: () => void;
+  showExpiryInput?: boolean;
+  expiresOn?: string;
+  onExpiresOnChange?: (expiresOn: string) => void;
 };
 
 export function OauthDialog({
@@ -131,6 +135,9 @@ export function OauthDialog({
   onComplete,
   onManualCallback,
   onReset,
+  showExpiryInput = false,
+  expiresOn = "",
+  onExpiresOnChange,
 }: OauthDialogProps) {
   const [selectedMethod, setSelectedMethod] = useState<"browser" | "device">("browser");
   const stage = getStage(state);
@@ -212,6 +219,23 @@ export function OauthDialog({
                 다른 기기에서 코드를 입력해 로그인합니다. 헤드리스 환경에 유용합니다.
               </p>
             </button>
+            {showExpiryInput ? (
+              <div className="rounded-lg border bg-muted/20 p-3">
+                <label htmlFor="oauth-account-expiry" className="text-sm font-medium">
+                  계정 만료일
+                </label>
+                <Input
+                  id="oauth-account-expiry"
+                  type="date"
+                  value={expiresOn}
+                  onChange={(event) => onExpiresOnChange?.(event.target.value)}
+                  className="mt-2 h-8"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  기본값은 오늘부터 한 달 후입니다. 계정 추가 후 자동으로 저장됩니다.
+                </p>
+              </div>
+            ) : null}
           </div>
         ) : null}
 

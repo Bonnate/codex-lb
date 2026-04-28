@@ -7,7 +7,7 @@ import { createAccountSummary } from "@/test/mocks/factories";
 
 afterEach(() => {
   act(() => {
-    usePrivacyStore.setState({ blurred: false });
+    usePrivacyStore.setState({ mode: "visible" });
   });
 });
 
@@ -16,9 +16,9 @@ describe("AccountCard", () => {
     const account = createAccountSummary();
     render(<AccountCard account={account} />);
 
-    expect(screen.getByText("Plus")).toBeInTheDocument();
-    expect(screen.getByText("5h")).toBeInTheDocument();
-    expect(screen.getByText("Weekly")).toBeInTheDocument();
+    expect(screen.getByText("플러스")).toBeInTheDocument();
+    expect(screen.getByText("5시간")).toBeInTheDocument();
+    expect(screen.getByText("주간")).toBeInTheDocument();
   });
 
   it("hides 5h quota bar for weekly-only accounts", () => {
@@ -34,14 +34,14 @@ describe("AccountCard", () => {
 
     render(<AccountCard account={account} />);
 
-    expect(screen.getByText("Free")).toBeInTheDocument();
-    expect(screen.queryByText("5h")).not.toBeInTheDocument();
-    expect(screen.getByText("Weekly")).toBeInTheDocument();
+    expect(screen.getByText("무료")).toBeInTheDocument();
+    expect(screen.queryByText("5시간")).not.toBeInTheDocument();
+    expect(screen.getByText("주간")).toBeInTheDocument();
   });
 
   it("blurs the dashboard card title when privacy mode is enabled", () => {
     act(() => {
-      usePrivacyStore.setState({ blurred: true });
+      usePrivacyStore.setState({ mode: "blur" });
     });
     const account = createAccountSummary({
       displayName: "AWS Account MSP",
@@ -52,5 +52,20 @@ describe("AccountCard", () => {
 
     expect(screen.getByText("AWS Account MSP")).toBeInTheDocument();
     expect(container.querySelector(".privacy-blur")).not.toBeNull();
+  });
+
+  it("shows only the first six account label characters in prefix privacy mode", () => {
+    act(() => {
+      usePrivacyStore.setState({ mode: "prefix" });
+    });
+    const account = createAccountSummary({
+      displayName: "abcdefghi@example.com",
+      email: "abcdefghi@example.com",
+    });
+
+    render(<AccountCard account={account} />);
+
+    expect(screen.getByText("abcdef…")).toBeInTheDocument();
+    expect(screen.queryByText("abcdefghi@example.com")).not.toBeInTheDocument();
   });
 });

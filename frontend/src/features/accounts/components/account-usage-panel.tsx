@@ -6,7 +6,7 @@ import type { AccountSummary, AccountTrendsResponse } from "@/features/accounts/
 import { quotaBarColor, quotaBarTrack } from "@/utils/account-status";
 import {
   formatCompactNumber,
-  formatCurrency,
+  formatCostUsd,
   formatPercentNullable,
   formatQuotaResetLabel,
   formatResetRelative,
@@ -134,7 +134,7 @@ export function AccountUsagePanel({ account, trends }: AccountUsagePanelProps) {
     <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
       <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">사용량</h3>
       <div className={cn("grid gap-4", weeklyOnly ? "grid-cols-1" : "grid-cols-2")}>
-        {!weeklyOnly && <QuotaRow label="5h" percent={primary} resetAt={account.resetAtPrimary} />}
+        {!weeklyOnly && <QuotaRow label="5시간" percent={primary} resetAt={account.resetAtPrimary} />}
         <QuotaRow label="주간" percent={secondary} resetAt={account.resetAtSecondary} />
       </div>
       <div className="rounded-md border bg-background/60 px-3 py-2">
@@ -142,7 +142,7 @@ export function AccountUsagePanel({ account, trends }: AccountUsagePanelProps) {
         {hasRequestUsage ? (
           <p className="mt-1 text-xs tabular-nums text-muted-foreground">
             {formatCompactNumber(requestUsage?.totalTokens)} 토큰 | {formatCompactNumber(requestUsage?.cachedInputTokens)} 캐시됨 |{" "}
-            {formatCompactNumber(requestUsage?.requestCount)}건 | {formatCurrency(requestUsage?.totalCostUsd)}
+            {formatCompactNumber(requestUsage?.requestCount)}건 | {formatCostUsd(requestUsage?.totalCostUsd)}
           </p>
         ) : (
           <p className="mt-1 text-xs text-muted-foreground">아직 요청 사용량이 없습니다.</p>
@@ -183,7 +183,7 @@ export function AccountUsagePanel({ account, trends }: AccountUsagePanelProps) {
             <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <span className="inline-block h-2 w-2 rounded-full bg-chart-1" />
-                5h
+                5시간
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="inline-block h-2 w-2 rounded-full bg-chart-2" />

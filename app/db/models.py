@@ -235,6 +235,12 @@ class DashboardSettings(Base):
         default=False,
         nullable=False,
     )
+    display_cost_currency: Mapped[str] = mapped_column(
+        String(3),
+        default="USD",
+        server_default=text("'USD'"),
+        nullable=False,
+    )
     totp_secret_encrypted: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
     totp_last_verified_step: Mapped[int | None] = mapped_column(Integer, nullable=True)
     http_responses_session_bridge_prompt_cache_idle_ttl_seconds: Mapped[int] = mapped_column(

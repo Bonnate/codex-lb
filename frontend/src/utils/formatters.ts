@@ -1,3 +1,4 @@
+import { getCostDisplaySnapshot } from "@/features/settings/cost-display";
 import { RESET_ERROR_LABEL } from "@/utils/constants";
 import { getTimeFormatPreference, type TimeFormatPreference } from "@/hooks/use-time-format";
 
@@ -82,6 +83,22 @@ export function formatSlug(value: string): string {
   return words.join(" ");
 }
 
+const PLAN_TYPE_LABELS: Record<string, string> = {
+  free: "무료",
+  plus: "플러스",
+  pro: "프로",
+  team: "팀",
+  enterprise: "엔터프라이즈",
+  business: "비즈니스",
+};
+
+/** Korean display label for upstream plan types (falls back to title-cased slug). */
+export function formatPlanTypeLabel(planType: string | null | undefined): string {
+  if (!planType) return "";
+  const key = planType.trim().toLowerCase();
+  return PLAN_TYPE_LABELS[key] ?? formatSlug(planType);
+}
+
 export function toNumber(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) {
     return value;
@@ -116,6 +133,30 @@ export function formatCurrency(value: unknown): string {
   return numeric === null ? "--" : currencyFormatter.format(numeric);
 }
 
+const zeroDecimalCurrencies = new Set(["JPY", "KRW"]);
+
+/** Formats a USD amount using dashboard display currency and server-provided FX rates. */
+export function formatCostUsd(value: unknown): string {
+  const numeric = toNumber(value);
+  if (numeric === null) {
+    return "--";
+  }
+  const { currency, rates } = getCostDisplaySnapshot();
+  const code = currency.toUpperCase();
+  const rate = rates[code];
+  if (code === "USD" || rate === undefined || !Number.isFinite(rate)) {
+    return currencyFormatter.format(numeric);
+  }
+  const converted = numeric * rate;
+  const decimals = zeroDecimalCurrencies.has(code) ? 0 : 2;
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: code,
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(converted);
+}
+
 export function formatPercent(value: unknown): string {
   const numeric = toNumber(value);
   if (numeric === null) {
@@ -148,12 +189,12 @@ export function formatWindowMinutes(value: unknown): string {
     return "--";
   }
   if (minutes % 1440 === 0) {
-    return `${minutes / 1440}d`;
+    return `${minutes / 1440}일`;
   }
   if (minutes % 60 === 0) {
-    return `${minutes / 60}h`;
+    return `${minutes / 60}시간`;
   }
-  return `${minutes}m`;
+  return `${minutes}분`;
 }
 
 export function formatWindowLabel(
@@ -165,10 +206,10 @@ export function formatWindowLabel(
     return formatted;
   }
   if (key === "secondary") {
-    return "7d";
+    return "7일";
   }
   if (key === "primary") {
-    return "5h";
+    return "5시간";
   }
   return "--";
 }
@@ -182,17 +223,17 @@ export function formatTokensWithCached(totalTokens: unknown, cachedInputTokens: 
   if (cached === null || cached <= 0) {
     return formatCompactNumber(total);
   }
-  return `${formatCompactNumber(total)} (${formatCompactNumber(cached)} Cached)`;
+  return `${formatCompactNumber(total)} (${formatCompactNumber(cached)} 캐시)`;
 }
 
 export function formatCachedTokensMeta(totalTokens: unknown, cachedInputTokens: unknown): string {
   const total = toNumber(totalTokens);
   const cached = toNumber(cachedInputTokens);
   if (total === null || total <= 0 || cached === null || cached <= 0) {
-    return "Cached: --";
+    return "캐시: --";
   }
   const percent = Math.min(100, Math.max(0, (cached / total) * 100));
-  return `Cached: ${formatCompactNumber(cached)} (${Math.round(percent)}%)`;
+  return `캐시: ${formatCompactNumber(cached)} (${Math.round(percent)}%)`;
 }
 
 export function formatModelLabel(
@@ -234,36 +275,36 @@ export function formatChartDateTime(iso: string | null | undefined): string {
 export function formatRelative(ms: number): string {
   const minutes = Math.ceil(ms / 60_000);
   if (minutes < 60) {
-    return `in ${minutes}m`;
+    return `${minutes}분 남음`;
   }
   const hours = Math.ceil(minutes / 60);
   if (hours < 24) {
-    return `in ${hours}h`;
+    return `${hours}시간 남음`;
   }
   const days = Math.ceil(hours / 24);
-  return `in ${days}d`;
+  return `${days}일 남음`;
 }
 
 export function formatResetRelative(ms: number): string {
   if (ms <= 60_000) {
-    return "in 1m";
+    return "1분 이내";
   }
 
   const totalMinutes = Math.floor(ms / 60_000);
   if (totalMinutes < 60) {
-    return `in ${totalMinutes}m`;
+    return `${totalMinutes}분`;
   }
 
   if (totalMinutes < 1440) {
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
-    return minutes > 0 ? `in ${hours}h ${minutes}m` : `in ${hours}h`;
+    return minutes > 0 ? `${hours}시간 ${minutes}분` : `${hours}시간`;
   }
 
   const totalHours = Math.floor(ms / 3_600_000);
   const days = Math.floor(totalHours / 24);
   const hours = totalHours % 24;
-  return hours > 0 ? `in ${days}d ${hours}h` : `in ${days}d`;
+  return hours > 0 ? `${days}일 ${hours}시간` : `${days}일`;
 }
 
 export function formatCountdown(seconds: number): string {
@@ -280,9 +321,9 @@ export function formatQuotaResetLabel(resetAt: string | null | undefined): strin
   }
   const diffMs = date.getTime() - Date.now();
   if (diffMs <= 0) {
-    return "now";
+    return "곧";
   }
-  return formatResetRelative(diffMs);
+  return `${formatResetRelative(diffMs)} 후`;
 }
 
 export function formatQuotaResetMeta(
@@ -292,9 +333,9 @@ export function formatQuotaResetMeta(
   const labelSecondary = formatQuotaResetLabel(resetAtSecondary);
   const windowSecondary = formatWindowLabel("secondary", windowMinutesSecondary);
   if (labelSecondary === RESET_ERROR_LABEL) {
-    return "Quota reset unavailable";
+    return "초기화 시각을 알 수 없음";
   }
-  return `Quota reset (${windowSecondary}) · ${labelSecondary}`;
+  return `한도 초기화 (${windowSecondary}) · ${labelSecondary}`;
 }
 
 export function truncateText(value: unknown, maxLen = 80): string {
@@ -314,36 +355,36 @@ export function truncateText(value: unknown, maxLen = 80): string {
 export function formatAccessTokenLabel(auth: AccountAuthStatus | null | undefined): string {
   const expiresAt = auth?.access?.expiresAt;
   if (!expiresAt) {
-    return "Missing";
+    return "없음";
   }
   const expiresDate = parseDate(expiresAt);
   if (!expiresDate) {
-    return "Unknown";
+    return "알 수 없음";
   }
   const diffMs = expiresDate.getTime() - Date.now();
   if (diffMs <= 0) {
-    return "Expired";
+    return "만료됨";
   }
-  return `Valid (${formatRelative(diffMs)})`;
+  return `유효 (${formatRelative(diffMs)})`;
 }
 
 export function formatRefreshTokenLabel(auth: AccountAuthStatus | null | undefined): string {
   const state = auth?.refresh?.state;
   const labelMap: Record<string, string> = {
-    stored: "Stored",
-    missing: "Missing",
-    expired: "Expired",
+    stored: "저장됨",
+    missing: "없음",
+    expired: "만료됨",
   };
-  return state && labelMap[state] ? labelMap[state] : "Unknown";
+  return state && labelMap[state] ? labelMap[state] : "알 수 없음";
 }
 
 export function formatIdTokenLabel(auth: AccountAuthStatus | null | undefined): string {
   const state = auth?.idToken?.state;
   const labelMap: Record<string, string> = {
-    parsed: "Parsed",
-    unknown: "Unknown",
+    parsed: "파싱됨",
+    unknown: "알 수 없음",
   };
-  return state && labelMap[state] ? labelMap[state] : "Unknown";
+  return state && labelMap[state] ? labelMap[state] : "알 수 없음";
 }
 
 export function toModels(value: string): string[] | undefined {

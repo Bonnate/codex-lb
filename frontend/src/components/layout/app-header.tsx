@@ -1,11 +1,10 @@
-import { Eye, EyeOff, LogOut, Menu } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 
 import { CodexLogo } from "@/components/brand/codex-logo";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { usePrivacyStore } from "@/hooks/use-privacy";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -27,9 +26,6 @@ export function AppHeader({
   className,
 }: AppHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const blurred = usePrivacyStore((s) => s.blurred);
-  const togglePrivacy = usePrivacyStore((s) => s.toggle);
-  const PrivacyIcon = blurred ? EyeOff : Eye;
 
   return (
     <header
@@ -71,16 +67,6 @@ export function AppHeader({
 
         {/* Actions */}
         <div className="flex flex-1 items-center justify-end gap-1.5">
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={togglePrivacy}
-            aria-label={blurred ? "이메일 표시" : "이메일 숨기기"}
-            className="press-scale hidden h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground sm:inline-flex"
-          >
-            <PrivacyIcon className="h-3.5 w-3.5" aria-hidden="true" />
-          </Button>
           {showLogout && (
             <Button
               type="button"
@@ -127,27 +113,21 @@ export function AppHeader({
                     )}
                   </NavLink>
                 ))}
-                <div className="my-2 h-px bg-border" />
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  onClick={togglePrivacy}
-                >
-                  <PrivacyIcon className="h-3.5 w-3.5" aria-hidden="true" />
-                  {blurred ? "이메일 표시" : "이메일 숨기기"}
-                </button>
                 {showLogout && (
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                    onClick={() => {
-                      setMobileOpen(false);
-                      onLogout();
-                    }}
-                  >
-                    <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
-                    로그아웃
-                  </button>
+                  <>
+                    <div className="my-2 h-px bg-border" />
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => {
+                        setMobileOpen(false);
+                        onLogout();
+                      }}
+                    >
+                      <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
+                      로그아웃
+                    </button>
+                  </>
                 )}
               </nav>
             </SheetContent>

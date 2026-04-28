@@ -23,6 +23,7 @@ from app.db.models import Account, AccountStatus, ApiKey, ApiKeyLimit, LimitType
 from app.modules.accounts.repository import AccountsRepository
 from app.modules.api_keys.repository import ApiKeysRepository
 from app.modules.proxy.account_cache import get_account_selection_cache
+from app.modules.settings.display_currency import normalize_display_cost_currency
 from app.modules.settings.repository import SettingsRepository
 from app.modules.settings.schemas import (
     DashboardBackupAccount,
@@ -49,6 +50,7 @@ class DashboardSettingsData:
     totp_required_on_login: bool
     totp_configured: bool
     api_key_auth_enabled: bool
+    display_cost_currency: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,6 +66,7 @@ class DashboardSettingsUpdateData:
     import_without_overwrite: bool
     totp_required_on_login: bool
     api_key_auth_enabled: bool
+    display_cost_currency: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -108,6 +111,7 @@ class SettingsService:
             totp_required_on_login=row.totp_required_on_login,
             totp_configured=row.totp_secret_encrypted is not None,
             api_key_auth_enabled=row.api_key_auth_enabled,
+            display_cost_currency=normalize_display_cost_currency(row.display_cost_currency),
         )
 
     async def update_settings(self, payload: DashboardSettingsUpdateData) -> DashboardSettingsData:
@@ -128,6 +132,7 @@ class SettingsService:
             import_without_overwrite=payload.import_without_overwrite,
             totp_required_on_login=payload.totp_required_on_login,
             api_key_auth_enabled=payload.api_key_auth_enabled,
+            display_cost_currency=normalize_display_cost_currency(payload.display_cost_currency),
         )
         return DashboardSettingsData(
             sticky_threads_enabled=row.sticky_threads_enabled,
@@ -144,6 +149,7 @@ class SettingsService:
             totp_required_on_login=row.totp_required_on_login,
             totp_configured=row.totp_secret_encrypted is not None,
             api_key_auth_enabled=row.api_key_auth_enabled,
+            display_cost_currency=normalize_display_cost_currency(row.display_cost_currency),
         )
 
     async def export_backup(self) -> DashboardBackupFile:
@@ -169,6 +175,7 @@ class SettingsService:
                 sticky_reallocation_budget_threshold_pct=settings_row.sticky_reallocation_budget_threshold_pct,
                 import_without_overwrite=settings_row.import_without_overwrite,
                 api_key_auth_enabled=settings_row.api_key_auth_enabled,
+                display_cost_currency=normalize_display_cost_currency(settings_row.display_cost_currency),
             ),
             dashboard_auth=DashboardBackupAuth(
                 password_hash=settings_row.password_hash,
@@ -327,6 +334,7 @@ class SettingsService:
                 ),
                 import_without_overwrite=backup.dashboard_settings.import_without_overwrite,
                 api_key_auth_enabled=backup.dashboard_settings.api_key_auth_enabled,
+                display_cost_currency=normalize_display_cost_currency(backup.dashboard_settings.display_cost_currency),
             )
             settings_applied = True
 

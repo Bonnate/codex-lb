@@ -19,27 +19,27 @@ describe("STATUS_LABELS", () => {
       "limited",
       "paused",
     ]);
-    expect(STATUS_LABELS.active).toBe("Active");
-    expect(STATUS_LABELS.exceeded).toBe("Quota exceeded");
+    expect(STATUS_LABELS.active).toBe("활성");
+    expect(STATUS_LABELS.exceeded).toBe("한도 초과");
   });
 });
 
 describe("ERROR_LABELS", () => {
   it("maps known error codes to normalized labels", () => {
-    expect(ERROR_LABELS.rate_limit).toBe("rate limit");
-    expect(ERROR_LABELS.rate_limit_exceeded).toBe("rate limit");
-    expect(ERROR_LABELS.quota_exceeded).toBe("quota");
-    expect(ERROR_LABELS.insufficient_quota).toBe("quota");
-    expect(ERROR_LABELS.upstream_error).toBe("upstream");
+    expect(ERROR_LABELS.rate_limit).toBe("속도 제한");
+    expect(ERROR_LABELS.rate_limit_exceeded).toBe("속도 제한");
+    expect(ERROR_LABELS.quota_exceeded).toBe("쿼터");
+    expect(ERROR_LABELS.insufficient_quota).toBe("쿼터");
+    expect(ERROR_LABELS.upstream_error).toBe("업스트림");
   });
 });
 
 describe("ROUTING_LABELS", () => {
   it("contains supported routing labels", () => {
-    expect(ROUTING_LABELS.usage_weighted).toBe("usage weighted");
-    expect(ROUTING_LABELS.round_robin).toBe("round robin");
-    expect(ROUTING_LABELS.capacity_weighted).toBe("capacity weighted");
-    expect(ROUTING_LABELS.sticky).toBe("sticky");
+    expect(ROUTING_LABELS.usage_weighted).toBe("사용량 가중치");
+    expect(ROUTING_LABELS.round_robin).toBe("라운드 로빈");
+    expect(ROUTING_LABELS.capacity_weighted).toBe("용량 가중치");
+    expect(ROUTING_LABELS.sticky).toBe("스티키");
   });
 });
 
@@ -76,7 +76,7 @@ describe("MESSAGE_TONE_META", () => {
       "success",
       "warning",
     ]);
-    expect(MESSAGE_TONE_META.success.defaultTitle).toBe("Import complete");
+    expect(MESSAGE_TONE_META.success.defaultTitle).toBe("가져오기 완료");
     expect(MESSAGE_TONE_META.error.className).toBe("deactivated");
   });
 });

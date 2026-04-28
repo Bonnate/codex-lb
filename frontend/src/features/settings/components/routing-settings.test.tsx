@@ -15,6 +15,8 @@ const BASE_SETTINGS: DashboardSettings = {
   totpRequiredOnLogin: false,
   totpConfigured: false,
   apiKeyAuthEnabled: true,
+  displayCostCurrency: "USD",
+  costFxRates: { USD: 1 },
 };
 
 describe("RoutingSettings", () => {
@@ -28,7 +30,7 @@ describe("RoutingSettings", () => {
     const ttlInput = screen.getByRole("spinbutton");
     await user.clear(ttlInput);
     await user.type(ttlInput, "180");
-    await user.click(screen.getByRole("button", { name: "Save TTL" }));
+    await user.click(screen.getByRole("button", { name: "TTL 저장" }));
 
     expect(onSave).toHaveBeenCalledWith({
       stickyThreadsEnabled: false,
@@ -39,6 +41,7 @@ describe("RoutingSettings", () => {
       importWithoutOverwrite: false,
       totpRequiredOnLogin: false,
       apiKeyAuthEnabled: true,
+      displayCostCurrency: "USD",
     });
 
     rerender(
@@ -61,6 +64,7 @@ describe("RoutingSettings", () => {
       importWithoutOverwrite: false,
       totpRequiredOnLogin: false,
       apiKeyAuthEnabled: true,
+      displayCostCurrency: "USD",
     });
   });
 
@@ -70,7 +74,7 @@ describe("RoutingSettings", () => {
     render(<RoutingSettings settings={BASE_SETTINGS} busy={false} onSave={onSave} />);
 
     const ttlInput = screen.getByRole("spinbutton");
-    const saveButton = screen.getByRole("button", { name: "Save TTL" });
+    const saveButton = screen.getByRole("button", { name: "TTL 저장" });
     expect(saveButton).toBeDisabled();
 
     await user.clear(ttlInput);
@@ -88,13 +92,14 @@ describe("RoutingSettings", () => {
       importWithoutOverwrite: false,
       totpRequiredOnLogin: false,
       apiKeyAuthEnabled: true,
+      displayCostCurrency: "USD",
     });
   });
 
   it("shows the configured upstream transport", () => {
     render(<RoutingSettings settings={BASE_SETTINGS} busy={false} onSave={vi.fn().mockResolvedValue(undefined)} />);
 
-    expect(screen.getByText("Upstream stream transport")).toBeInTheDocument();
-    expect(screen.getByText("Server default")).toBeInTheDocument();
+    expect(screen.getByText("업스트림 스트림 전송 방식")).toBeInTheDocument();
+    expect(screen.getByText("서버 기본값")).toBeInTheDocument();
   });
 });

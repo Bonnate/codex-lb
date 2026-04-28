@@ -99,7 +99,7 @@ function parseApiErrorPayload(payload: unknown): {
   if (!parsed.success) {
     return {
       code: "request_failed",
-      message: "Request failed",
+      message: "요청에 실패했습니다",
       details: payload,
     };
   }
@@ -110,7 +110,7 @@ function parseApiErrorPayload(payload: unknown): {
   const message =
     typeof error.message === "string" && error.message.length > 0
       ? error.message
-      : "Request failed";
+      : "요청에 실패했습니다";
 
   return {
     code,
@@ -175,7 +175,7 @@ async function request<T>(
     throw new ApiError({
       status: 0,
       code: "network_error",
-      message: error instanceof Error ? error.message : "Network request failed",
+      message: error instanceof Error ? error.message : "네트워크 요청에 실패했습니다",
       details: error,
     });
   }
@@ -208,7 +208,7 @@ async function request<T>(
     throw new ApiError({
       status: response.status,
       code: "invalid_response_schema",
-      message: "Response schema mismatch",
+      message: "응답 형식이 올바르지 않습니다",
       details: parsed.error.format(),
       payload,
     });
@@ -241,7 +241,7 @@ async function requestBlob(
     throw new ApiError({
       status: 0,
       code: "network_error",
-      message: error instanceof Error ? error.message : "Network request failed",
+      message: error instanceof Error ? error.message : "네트워크 요청에 실패했습니다",
       details: error,
     });
   }

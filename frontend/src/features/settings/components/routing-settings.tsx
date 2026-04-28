@@ -68,8 +68,8 @@ export function RoutingSettings({ settings, busy, onSave }: RoutingSettingsProps
               <SelectContent align="end">
                 <SelectItem value="default">서버 기본값</SelectItem>
                 <SelectItem value="auto">자동</SelectItem>
-                <SelectItem value="http">Responses</SelectItem>
-                <SelectItem value="websocket">WebSockets</SelectItem>
+                <SelectItem value="http">응답 API</SelectItem>
+                <SelectItem value="websocket">웹소켓</SelectItem>
               </SelectContent>
             </Select>
           </div>

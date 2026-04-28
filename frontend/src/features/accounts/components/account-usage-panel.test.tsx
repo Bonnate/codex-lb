@@ -26,7 +26,7 @@ describe("AccountUsagePanel", () => {
 
     render(<AccountUsagePanel account={account} trends={null} />);
 
-    expect(screen.getByText("5h remaining")).toBeInTheDocument();
+    expect(screen.getByText("5시간 남음")).toBeInTheDocument();
     expect(screen.getByText("--")).toBeInTheDocument();
   });
 
@@ -43,8 +43,8 @@ describe("AccountUsagePanel", () => {
 
     render(<AccountUsagePanel account={account} trends={null} />);
 
-    expect(screen.queryByText("5h remaining")).not.toBeInTheDocument();
-    expect(screen.getByText("Weekly remaining")).toBeInTheDocument();
+    expect(screen.queryByText("5시간 남음")).not.toBeInTheDocument();
+    expect(screen.getByText("주간 남음")).toBeInTheDocument();
   });
 
   it("renders mapped label for the known gated additional quota limit", () => {
@@ -65,10 +65,10 @@ describe("AccountUsagePanel", () => {
 
     render(<AccountUsagePanel account={account} trends={null} />);
 
-    expect(screen.getByText("Additional Quotas")).toBeInTheDocument();
+    expect(screen.getByText("추가 한도")).toBeInTheDocument();
     expect(screen.getByText("GPT-5.3-Codex-Spark")).toBeInTheDocument();
-    expect(screen.getByText(/35% used/)).toBeInTheDocument();
-    expect(screen.getByText("Resets in 6d 13h")).toBeInTheDocument();
+    expect(screen.getByText(/35% 사용/)).toBeInTheDocument();
+    expect(screen.getByText("6일 13시간 후 리셋")).toBeInTheDocument();
   });
 
   it("renders request log usage summary when available", () => {
@@ -83,8 +83,8 @@ describe("AccountUsagePanel", () => {
 
     render(<AccountUsagePanel account={account} trends={null} />);
 
-    expect(screen.getByText("Request logs total")).toBeInTheDocument();
+    expect(screen.getByText("요청 로그 합계")).toBeInTheDocument();
     expect(screen.getByText(/\$0\.13/)).toBeInTheDocument();
-    expect(screen.getByText(/51\.48K tok/)).toBeInTheDocument();
+    expect(screen.getByText(/51\.48K.*토큰/)).toBeInTheDocument();
   });
 });

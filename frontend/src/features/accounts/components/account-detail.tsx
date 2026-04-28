@@ -1,6 +1,6 @@
 import { User } from "lucide-react";
 
-import { isEmailLabel } from "@/components/blur-email";
+import { isEmailLabel, renderPrivacyLabel } from "@/components/blur-email";
 import { usePrivacyStore } from "@/hooks/use-privacy";
 import { AccountActions } from "@/features/accounts/components/account-actions";
 import { AccountExpiryCard } from "@/features/accounts/components/account-expiry-card";
@@ -32,7 +32,7 @@ export function AccountDetail({
   onReauth,
 }: AccountDetailProps) {
   const { data: trends } = useAccountTrends(account?.accountId ?? null);
-  const blurred = usePrivacyStore((s) => s.blurred);
+  const privacyMode = usePrivacyStore((s) => s.mode);
 
   if (!account) {
     return (
@@ -59,11 +59,11 @@ export function AccountDetail({
       {/* Account header */}
       <div>
         <h2 className="text-base font-semibold">
-          {titleIsEmail ? <><span className={blurred ? "privacy-blur" : ""}>{title}</span>{idSuffix}</> : <>{title}{!emailSubtitle ? idSuffix : ""}</>}
+          {titleIsEmail ? <>{renderPrivacyLabel(title, privacyMode)}{idSuffix}</> : <>{title}{!emailSubtitle ? idSuffix : ""}</>}
         </h2>
         {emailSubtitle ? (
           <p className="mt-0.5 text-xs text-muted-foreground" title={showAccountId ? `계정 ID ${account.accountId}` : undefined}>
-            <span className={blurred ? "privacy-blur" : ""}>{emailSubtitle}</span>{showAccountId ? ` | ID ${compactId}` : ""}
+            {renderPrivacyLabel(emailSubtitle, privacyMode)}{showAccountId ? ` | ID ${compactId}` : ""}
           </p>
         ) : null}
       </div>

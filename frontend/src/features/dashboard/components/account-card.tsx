@@ -1,5 +1,6 @@
 import { Clock, ExternalLink, Play, RotateCcw } from "lucide-react";
 
+import { renderPrivacyLabel } from "@/components/blur-email";
 import { usePrivacyStore } from "@/hooks/use-privacy";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/status-badge";
@@ -11,7 +12,7 @@ import {
   quotaBarColor,
   quotaBarTrack,
 } from "@/utils/account-status";
-import { formatPercentNullable, formatQuotaResetLabel, formatSlug } from "@/utils/formatters";
+import { formatPercentNullable, formatPlanTypeLabel, formatQuotaResetLabel } from "@/utils/formatters";
 
 type AccountAction = "details" | "resume" | "reauth";
 
@@ -66,7 +67,7 @@ function QuotaBar({
 }
 
 export function AccountCard({ account, showAccountId = false, onAction }: AccountCardProps) {
-  const blurred = usePrivacyStore((s) => s.blurred);
+  const privacyMode = usePrivacyStore((s) => s.mode);
   const status = normalizeStatus(account.status);
   const primaryRemaining = account.usage?.primaryRemainingPercent ?? null;
   const secondaryRemaining = account.usage?.secondaryRemainingPercent ?? null;
@@ -77,7 +78,7 @@ export function AccountCard({ account, showAccountId = false, onAction }: Accoun
 
   const title = account.displayName || account.email;
   const compactId = formatCompactAccountId(account.accountId);
-  const planLabel = formatSlug(account.planType);
+  const planLabel = formatPlanTypeLabel(account.planType);
   const emailSubtitle =
     account.displayName && account.displayName !== account.email
       ? account.email
@@ -90,9 +91,7 @@ export function AccountCard({ account, showAccountId = false, onAction }: Accoun
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold leading-tight">
-            {blurred
-              ? <span className="privacy-blur">{title}</span>
-              : title}
+            {renderPrivacyLabel(title, privacyMode)}
           </p>
           <p className="mt-0.5 truncate text-xs text-muted-foreground">
             {planLabel}
@@ -100,7 +99,7 @@ export function AccountCard({ account, showAccountId = false, onAction }: Accoun
           </p>
           {emailSubtitle ? (
             <p className="mt-0.5 truncate text-xs text-muted-foreground" title={showAccountId ? `Account ID ${account.accountId}` : undefined}>
-              <span className={blurred ? "privacy-blur" : undefined}>{emailSubtitle}</span>{showAccountId ? ` | ID ${compactId}` : ""}
+              {renderPrivacyLabel(emailSubtitle, privacyMode)}{showAccountId ? ` | ID ${compactId}` : ""}
             </p>
           ) : null}
         </div>
@@ -109,8 +108,8 @@ export function AccountCard({ account, showAccountId = false, onAction }: Accoun
 
       {/* Quota bars */}
       <div className={cn("mt-3.5 grid gap-3", weeklyOnly ? "grid-cols-1" : "grid-cols-2")}>
-        {!weeklyOnly && <QuotaBar label="5h" percent={primaryRemaining} resetLabel={primaryReset} />}
-        <QuotaBar label="Weekly" percent={secondaryRemaining} resetLabel={secondaryReset} />
+        {!weeklyOnly && <QuotaBar label="5시간" percent={primaryRemaining} resetLabel={primaryReset} />}
+        <QuotaBar label="주간" percent={secondaryRemaining} resetLabel={secondaryReset} />
       </div>
 
       {/* Actions */}
@@ -123,7 +122,7 @@ export function AccountCard({ account, showAccountId = false, onAction }: Accoun
           onClick={() => onAction?.(account, "details")}
         >
           <ExternalLink className="h-3 w-3" />
-          Details
+          자세히
         </Button>
         {status === "paused" && (
           <Button
@@ -134,7 +133,7 @@ export function AccountCard({ account, showAccountId = false, onAction }: Accoun
             onClick={() => onAction?.(account, "resume")}
           >
             <Play className="h-3 w-3" />
-            Resume
+            재개
           </Button>
         )}
         {status === "deactivated" && (
@@ -146,7 +145,7 @@ export function AccountCard({ account, showAccountId = false, onAction }: Accoun
             onClick={() => onAction?.(account, "reauth")}
           >
             <RotateCcw className="h-3 w-3" />
-            Re-auth
+            재인증
           </Button>
         )}
       </div>

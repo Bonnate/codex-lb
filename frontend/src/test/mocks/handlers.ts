@@ -89,6 +89,7 @@ const SettingsPayloadSchema = z
 		totpRequiredOnLogin: z.boolean().optional(),
 		totpConfigured: z.boolean().optional(),
 		apiKeyAuthEnabled: z.boolean().optional(),
+		displayCostCurrency: z.string().length(3).optional(),
 	})
 	.passthrough();
 

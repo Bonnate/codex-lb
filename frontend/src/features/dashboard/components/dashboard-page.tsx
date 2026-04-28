@@ -1,10 +1,12 @@
 import { useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { RefreshCw } from "lucide-react";
+import { ChevronDown, RefreshCw } from "lucide-react";
+import { Collapsible } from "radix-ui";
 
 import { AlertMessage } from "@/components/alert-message";
 import { useAccountMutations } from "@/features/accounts/hooks/use-accounts";
+import { AccountExpiryCalendar } from "@/features/dashboard/components/account-expiry-calendar";
 import { AccountCards } from "@/features/dashboard/components/account-cards";
 import { DashboardSkeleton } from "@/features/dashboard/components/dashboard-skeleton";
 import { OverviewTimeframeSelect } from "@/features/dashboard/components/filters/overview-timeframe-select";
@@ -22,6 +24,7 @@ import {
   type OverviewTimeframe,
 } from "@/features/dashboard/schemas";
 import { useThemeStore } from "@/hooks/use-theme";
+import { cn } from "@/lib/utils";
 import { REQUEST_STATUS_LABELS } from "@/utils/constants";
 import { formatModelLabel, formatSlug } from "@/utils/formatters";
 
@@ -173,55 +176,89 @@ export function DashboardPage() {
               safeLineSecondary={view.safeLineSecondary}
             />
 
-          <section className="space-y-4">
-            <div className="flex items-center gap-3">
-              <h2 className="text-[13px] font-medium uppercase tracking-wider text-muted-foreground">계정</h2>
-              <div className="h-px flex-1 bg-border" />
-            </div>
-            <AccountCards accounts={overview?.accounts ?? []} onAction={handleAccountAction} />
-          </section>
+          <AccountExpiryCalendar accounts={overview?.accounts ?? []} />
 
-          <section className="space-y-4">
-            <div className="flex items-center gap-3">
-              <h2 className="text-[13px] font-medium uppercase tracking-wider text-muted-foreground">요청 로그</h2>
-              <div className="h-px flex-1 bg-border" />
-            </div>
-            <RequestFilters
-              filters={filters}
-              accountOptions={accountOptions}
-              modelOptions={modelOptions}
-              statusOptions={statusOptions}
-              onSearchChange={(search) => updateFilters({ search, offset: 0 })}
-              onTimeframeChange={(timeframe) => updateFilters({ timeframe, offset: 0 })}
-              onAccountChange={(accountIds) => updateFilters({ accountIds, offset: 0 })}
-              onModelChange={(modelOptionsSelected) =>
-                updateFilters({ modelOptions: modelOptionsSelected, offset: 0 })
-              }
-              onStatusChange={(statuses) => updateFilters({ statuses, offset: 0 })}
-              onReset={() =>
-                updateFilters({
-                  search: "",
-                  timeframe: "all",
-                  accountIds: [],
-                  modelOptions: [],
-                  statuses: [],
-                  offset: 0,
-                })
-              }
-            />
-            <div className="transition-opacity duration-200">
-              <RecentRequestsTable
-                requests={view.requestLogs}
-                accounts={overview?.accounts ?? []}
-                total={logPage?.total ?? 0}
-                limit={filters.limit}
-                offset={filters.offset}
-                hasMore={logPage?.hasMore ?? false}
-                onLimitChange={(limit) => updateFilters({ limit, offset: 0 })}
-                onOffsetChange={(offset) => updateFilters({ offset })}
+          <Collapsible.Root defaultOpen={false} className="group space-y-4">
+            <Collapsible.Trigger asChild>
+              <button
+                type="button"
+                className="flex w-full items-center gap-3 rounded-md text-left outline-none ring-offset-background transition-colors hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <ChevronDown
+                  aria-hidden
+                  className={cn(
+                    "h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200",
+                    "group-data-[state=open]:rotate-180",
+                  )}
+                />
+                <h2 className="text-[13px] font-medium uppercase tracking-wider text-muted-foreground">
+                  계정
+                </h2>
+                <div className="h-px flex-1 bg-border" />
+              </button>
+            </Collapsible.Trigger>
+            <Collapsible.Content className="overflow-hidden data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0">
+              <AccountCards accounts={overview?.accounts ?? []} onAction={handleAccountAction} />
+            </Collapsible.Content>
+          </Collapsible.Root>
+
+          <Collapsible.Root defaultOpen={false} className="group space-y-4">
+            <Collapsible.Trigger asChild>
+              <button
+                type="button"
+                className="flex w-full items-center gap-3 rounded-md text-left outline-none ring-offset-background transition-colors hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <ChevronDown
+                  aria-hidden
+                  className={cn(
+                    "h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200",
+                    "group-data-[state=open]:rotate-180",
+                  )}
+                />
+                <h2 className="text-[13px] font-medium uppercase tracking-wider text-muted-foreground">
+                  요청 로그
+                </h2>
+                <div className="h-px flex-1 bg-border" />
+              </button>
+            </Collapsible.Trigger>
+            <Collapsible.Content className="space-y-4 overflow-hidden data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0">
+              <RequestFilters
+                filters={filters}
+                accountOptions={accountOptions}
+                modelOptions={modelOptions}
+                statusOptions={statusOptions}
+                onSearchChange={(search) => updateFilters({ search, offset: 0 })}
+                onTimeframeChange={(timeframe) => updateFilters({ timeframe, offset: 0 })}
+                onAccountChange={(accountIds) => updateFilters({ accountIds, offset: 0 })}
+                onModelChange={(modelOptionsSelected) =>
+                  updateFilters({ modelOptions: modelOptionsSelected, offset: 0 })
+                }
+                onStatusChange={(statuses) => updateFilters({ statuses, offset: 0 })}
+                onReset={() =>
+                  updateFilters({
+                    search: "",
+                    timeframe: "all",
+                    accountIds: [],
+                    modelOptions: [],
+                    statuses: [],
+                    offset: 0,
+                  })
+                }
               />
-            </div>
-          </section>
+              <div className="transition-opacity duration-200">
+                <RecentRequestsTable
+                  requests={view.requestLogs}
+                  accounts={overview?.accounts ?? []}
+                  total={logPage?.total ?? 0}
+                  limit={filters.limit}
+                  offset={filters.offset}
+                  hasMore={logPage?.hasMore ?? false}
+                  onLimitChange={(limit) => updateFilters({ limit, offset: 0 })}
+                  onOffsetChange={(offset) => updateFilters({ offset })}
+                />
+              </div>
+            </Collapsible.Content>
+          </Collapsible.Root>
         </>
       )}
 

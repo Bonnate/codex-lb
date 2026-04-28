@@ -31,6 +31,7 @@ class SettingsRepository:
             bootstrap_token_encrypted=None,
             bootstrap_token_hash=None,
             api_key_auth_enabled=False,
+            display_cost_currency="USD",
             totp_secret_encrypted=None,
             totp_last_verified_step=None,
         )
@@ -60,6 +61,7 @@ class SettingsRepository:
         import_without_overwrite: bool | None = None,
         totp_required_on_login: bool | None = None,
         api_key_auth_enabled: bool | None = None,
+        display_cost_currency: str | None = None,
     ) -> DashboardSettings:
         settings = await self.get_or_create()
         if sticky_threads_enabled is not None:
@@ -86,6 +88,8 @@ class SettingsRepository:
             settings.totp_required_on_login = totp_required_on_login
         if api_key_auth_enabled is not None:
             settings.api_key_auth_enabled = api_key_auth_enabled
+        if display_cost_currency is not None:
+            settings.display_cost_currency = display_cost_currency
         await self.commit_refresh(settings)
         return settings
 

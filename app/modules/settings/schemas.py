@@ -21,6 +21,10 @@ class DashboardSettingsResponse(DashboardModel):
     totp_required_on_login: bool
     totp_configured: bool
     api_key_auth_enabled: bool
+    display_cost_currency: str = Field(min_length=3, max_length=3, pattern=r"^[A-Z]{3}$")
+    cost_fx_rates: dict[str, float] = Field(default_factory=dict)
+    cost_fx_rate_date: str | None = None
+    cost_fx_fetched_at: datetime | None = None
 
 
 class DashboardSettingsUpdateRequest(DashboardModel):
@@ -38,6 +42,7 @@ class DashboardSettingsUpdateRequest(DashboardModel):
     import_without_overwrite: bool | None = None
     totp_required_on_login: bool | None = None
     api_key_auth_enabled: bool | None = None
+    display_cost_currency: str | None = Field(default=None, min_length=3, max_length=3, pattern=r"^[A-Za-z]{3}$")
 
 
 class RuntimeConnectAddressResponse(DashboardModel):
@@ -55,6 +60,7 @@ class DashboardBackupSettings(DashboardModel):
     sticky_reallocation_budget_threshold_pct: float = Field(ge=0.0, le=100.0)
     import_without_overwrite: bool
     api_key_auth_enabled: bool
+    display_cost_currency: str = Field(default="USD", min_length=3, max_length=3, pattern=r"^[A-Za-z]{3}$")
 
 
 class DashboardBackupAuth(DashboardModel):

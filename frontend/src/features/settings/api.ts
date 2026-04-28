@@ -4,18 +4,23 @@ import {
   DashboardSettingsSchema,
   SettingsUpdateRequestSchema,
 } from "@/features/settings/schemas";
+import { applyCostDisplayFromSettings } from "@/features/settings/cost-display";
 
 const SETTINGS_PATH = "/api/settings";
 
-export function getSettings() {
-  return get(SETTINGS_PATH, DashboardSettingsSchema);
+export async function getSettings() {
+  const data = await get(SETTINGS_PATH, DashboardSettingsSchema);
+  applyCostDisplayFromSettings(data);
+  return data;
 }
 
-export function updateSettings(payload: unknown) {
+export async function updateSettings(payload: unknown) {
   const validated = SettingsUpdateRequestSchema.parse(payload);
-  return put(SETTINGS_PATH, DashboardSettingsSchema, {
+  const data = await put(SETTINGS_PATH, DashboardSettingsSchema, {
     body: validated,
   });
+  applyCostDisplayFromSettings(data);
+  return data;
 }
 
 export function downloadBackup() {

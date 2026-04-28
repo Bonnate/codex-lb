@@ -17,6 +17,8 @@ describe("DashboardSettingsSchema", () => {
       totpRequiredOnLogin: true,
       totpConfigured: false,
       apiKeyAuthEnabled: true,
+      displayCostCurrency: "USD",
+      costFxRates: { USD: 1, EUR: 0.92 },
     });
 
     expect(parsed.stickyThreadsEnabled).toBe(true);

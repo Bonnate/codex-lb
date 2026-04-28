@@ -13,6 +13,10 @@ export const DashboardSettingsSchema = z.object({
   totpRequiredOnLogin: z.boolean(),
   totpConfigured: z.boolean(),
   apiKeyAuthEnabled: z.boolean(),
+  displayCostCurrency: z.string().length(3),
+  costFxRates: z.record(z.string(), z.number()).default({}),
+  costFxRateDate: z.string().nullable().optional(),
+  costFxFetchedAt: z.string().nullable().optional(),
 });
 
 export const SettingsUpdateRequestSchema = z.object({
@@ -24,6 +28,7 @@ export const SettingsUpdateRequestSchema = z.object({
   importWithoutOverwrite: z.boolean().optional(),
   totpRequiredOnLogin: z.boolean().optional(),
   apiKeyAuthEnabled: z.boolean().optional(),
+  displayCostCurrency: z.string().length(3).optional(),
 });
 
 export const DashboardRestoreResponseSchema = z.object({

@@ -35,18 +35,18 @@ describe("CopyButton", () => {
 
     render(<CopyButton value="secret-value" />);
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Copy" }));
+      fireEvent.click(screen.getByRole("button", { name: "복사" }));
       await Promise.resolve();
     });
 
     expect(writeText).toHaveBeenCalledWith("secret-value");
-    expect(toastSuccess).toHaveBeenCalledWith("Copied to clipboard");
-    expect(screen.getByRole("button", { name: "Copy Copied" })).toBeInTheDocument();
+    expect(toastSuccess).toHaveBeenCalledWith("클립보드에 복사했습니다");
+    expect(screen.getByRole("button", { name: "복사 완료" })).toBeInTheDocument();
 
     act(() => {
       vi.advanceTimersByTime(1_200);
     });
-    expect(screen.getByRole("button", { name: "Copy" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "복사" })).toBeInTheDocument();
   });
 
   it("shows error toast when clipboard write fails", async () => {
@@ -58,11 +58,11 @@ describe("CopyButton", () => {
 
     render(<CopyButton value="secret-value" />);
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Copy" }));
+      fireEvent.click(screen.getByRole("button", { name: "복사" }));
       await Promise.resolve();
     });
 
-    expect(toastError).toHaveBeenCalledWith("Failed to copy");
+    expect(toastError).toHaveBeenCalledWith("복사하지 못했습니다");
   });
 
   it("supports icon-only copy buttons with accessible labeling", async () => {
@@ -72,13 +72,13 @@ describe("CopyButton", () => {
       value: { writeText },
     });
 
-    render(<CopyButton value="secret-value" label="Copy Request ID" iconOnly />);
+    render(<CopyButton value="secret-value" label="요청 ID 복사" iconOnly />);
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Copy Request ID" }));
+      fireEvent.click(screen.getByRole("button", { name: "요청 ID 복사" }));
       await Promise.resolve();
     });
 
     expect(writeText).toHaveBeenCalledWith("secret-value");
-    expect(screen.getByRole("button", { name: "Copy Request ID Copied" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "요청 ID 복사 완료" })).toBeInTheDocument();
   });
 });

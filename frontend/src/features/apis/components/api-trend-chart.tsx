@@ -12,7 +12,7 @@ import {
 import { useChartColors } from "@/hooks/use-chart-colors";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import type { ApiKeyTrendPoint } from "@/features/apis/schemas";
-import { formatChartDateTime, formatCompactNumber, formatCurrency } from "@/utils/formatters";
+import { formatChartDateTime, formatCompactNumber, formatCostUsd } from "@/utils/formatters";
 
 type MergedPoint = {
   t: string;
@@ -58,7 +58,7 @@ function formatTokenTick(value: number): string {
 }
 
 const SERIES_META: Record<string, { label: string; formatter: (v: number) => string }> = {
-  cost: { label: "비용", formatter: formatCurrency },
+  cost: { label: "비용", formatter: formatCostUsd },
   tokens: { label: "토큰", formatter: (v) => formatCompactNumber(v) },
 };
 

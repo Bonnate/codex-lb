@@ -347,6 +347,10 @@ export function createDashboardSettings(
 		totpRequiredOnLogin: false,
 		totpConfigured: true,
 		apiKeyAuthEnabled: true,
+		displayCostCurrency: "USD",
+		costFxRates: { USD: 1, EUR: 0.92 },
+		costFxRateDate: "2026-01-01",
+		costFxFetchedAt: offsetIso(0),
 		...overrides,
 	});
 }
